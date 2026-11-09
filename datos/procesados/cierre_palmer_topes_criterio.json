@@ -1,0 +1,27 @@
+{
+ "suma 50 %": {
+  "razon_maxima_anual_con_tope": 28.2031452469533,
+  "anio_razon_maxima": 2025,
+  "anios_con_pago_mayor_1_5": "1991, 1994, 1999, 2000, 2001, 2003, 2004, 2005, 2006, 2007, 2013, 2016, 2017, 2021, 2022, 2023, 2024, 2025",
+  "anios_sin_perdida_con_pago": "2009",
+  "condicion_1_nunca_mas_de_1_5_veces": false,
+  "de_cada_100_palmer_con_tope": 22.62044306154406,
+  "de_cada_100_lluvia_con_tope": 19.724795799141212,
+  "de_cada_100_lluvia_sin_tope": 32.20253726901869,
+  "condicion_2_igual_o_mejor_que_lluvia": true,
+  "vendible": false
+ },
+ "suma 75 %": {
+  "razon_maxima_anual_con_tope": 42.304717870429954,
+  "anio_razon_maxima": 2025,
+  "anios_con_pago_mayor_1_5": "1991, 1994, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2013, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024, 2025",
+  "anios_sin_perdida_con_pago": "2009",
+  "condicion_1_nunca_mas_de_1_5_veces": false,
+  "de_cada_100_palmer_con_tope": 22.62044306154406,
+  "de_cada_100_lluvia_con_tope": 19.724795799141212,
+  "de_cada_100_lluvia_sin_tope": 32.20253726901869,
+  "condicion_2_igual_o_mejor_que_lluvia": true,
+  "vendible": false
+ },
+ "vendible_en_ambas_sumas": false
+}

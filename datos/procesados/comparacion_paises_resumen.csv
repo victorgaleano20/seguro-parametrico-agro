@@ -1,0 +1,10 @@
+prueba,series,ciclos,perdidas,pagos,perdida_y_pago,aciertos_azar,perdida_sin_pago,pago_sin_perdida,heidke,p_permutacion,spearman_anomalia_rend,prob_perdida_seco,ciclos_seco,prob_perdida_normal,ciclos_normal,prob_perdida_húmedo,ciclos_húmedo,pais,indice
+Estados Unidos - combinado,293,12544,1289,2815,658,289.3,631,2157,0.209,0.001,0.174,0.352,1418,0.065,9729,0.114,1397,Estados Unidos,combinado
+Estados Unidos - sequía,293,12544,1289,1418,499,145.7,790,919,0.293,0.001,0.174,0.352,1418,0.065,9729,0.114,1397,Estados Unidos,sequía
+Estados Unidos - exceso,293,12544,1289,1397,159,143.6,1130,1238,0.013,0.086,0.174,0.352,1418,0.065,9729,0.114,1397,Estados Unidos,exceso
+Colombia - combinado,1170,16069,4137,4325,1135,1113.5,3002,3190,0.007,0.166,-0.011,0.264,1915,0.256,11744,0.261,2410,Colombia,combinado
+Colombia - sequía,1170,16069,4137,1915,505,493.0,3632,1410,0.005,0.052,-0.011,0.264,1915,0.256,11744,0.261,2410,Colombia,sequía
+Colombia - exceso,1170,16069,4137,2410,630,620.5,3507,1780,0.004,0.604,-0.011,0.264,1915,0.256,11744,0.261,2410,Colombia,exceso
+México - combinado,1426,30728,3168,7328,787,755.5,2381,6541,0.007,0.083,0.081,0.14,3128,0.102,23400,0.083,4200,México,combinado
+México - sequía,1426,30728,3168,3128,438,322.5,2730,2690,0.041,0.001,0.081,0.14,3128,0.102,23400,0.083,4200,México,sequía
+México - exceso,1426,30728,3168,4200,349,433.0,2819,3851,-0.026,1.0,0.081,0.14,3128,0.102,23400,0.083,4200,México,exceso

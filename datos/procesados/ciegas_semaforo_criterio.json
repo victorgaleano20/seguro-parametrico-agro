@@ -1,0 +1,38 @@
+{
+ "prueba 1 solo estados nuevos | base y rojo si hay riego": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ },
+ "prueba 1 solo estados nuevos | regla base": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ },
+ "prueba 1: hacia adelante, 10 estados | base y rojo si hay riego": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ },
+ "prueba 1: hacia adelante, 10 estados | regla base": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ },
+ "prueba 2: nuevos hasta 2018 y 2019-2025 | base y rojo si hay riego": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ },
+ "prueba 2: nuevos hasta 2018 y 2019-2025 | regla base": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ }
+}

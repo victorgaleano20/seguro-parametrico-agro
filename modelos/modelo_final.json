@@ -1,0 +1,46 @@
+{
+  "modelo": "Bosque aleatorio",
+  "clave": "bosque",
+  "hiperparametros": {
+    "max_depth": 10,
+    "min_samples_leaf": 20
+  },
+  "entrenado_con": "Iowa, Illinois e Indiana, 1981-2025",
+  "filas_entrenamiento": 12544,
+  "perdidas_entrenamiento": 1289,
+  "calibrado": true,
+  "variables": [
+    "latitud",
+    "longitud",
+    "lluvia_may",
+    "lluvia_jun",
+    "lluvia_jul",
+    "lluvia_ago",
+    "lluvia_sep",
+    "racha_meses_secos",
+    "deficit_jul_ago",
+    "tmax_jun",
+    "tmax_jul",
+    "tmax_ago",
+    "palmer_jun",
+    "palmer_jul",
+    "palmer_ago",
+    "grupo"
+  ],
+  "etiqueta": "rendimiento del condado de 80 % o menos de su tendencia lineal",
+  "como_predecir": "python scripts/48_predecir.py archivo.csv (columnas: las de 'variables')",
+  "advertencia": "No probado todavía en los siete estados nuevos; las probabilidades necesitan recalibrarse con datos locales en otras zonas.",
+  "eleccion": {
+    "elegido": "bosque",
+    "nombre": "Bosque aleatorio",
+    "puntaje_desarrollo": 0.7437649110330851,
+    "mejor_puntaje_desarrollo": 0.7437649110330851,
+    "empatados_dentro_de_0_01": [
+      "bosque"
+    ],
+    "auc_prueba": 0.9403787170131965,
+    "auc_calor_prueba": 0.9124682756487421,
+    "ventaja_sobre_calor_prueba": 0.02791044136445442,
+    "supera_calor_por_mas_de_0_02": true
+  }
+}

@@ -1,0 +1,28 @@
+# Qué necesita un seguro por índice para funcionar: EE. UU. frente a Colombia
+
+Una página. Lo de EE. UU. sale de la prueba a ciegas (`docs/resultados_prueba_ciegas.md`). Lo de Colombia sale del análisis de maíz y café en Colombia (octubre y noviembre de 2026), que se retiró del proyecto el 2026-11-08: sus scripts y documentos siguen en el repositorio original `paulina0428/seguro-parametrico-maiz` (privado; commit `2789634`: `docs/calidad_datos_cafe.md`, `docs/comparacion_paises.md` y `docs/receta_colombia.md`). No se agregó ninguna cifra que no esté en esos documentos.
+
+**Por qué este documento es el centro del proyecto:** en EE. UU. el rendimiento del condado ya se mide bien, y existe un seguro que paga por él (el seguro por rendimiento del condado de la RMA). Un índice de clima tiene sentido sobre todo donde ese dato no existe o no es confiable, como en Colombia. EE. UU. sirve de laboratorio para medir el método; Colombia es donde se necesita.
+
+| Lo que se necesita | EE. UU. (maíz, 10 estados) | Colombia, maíz (EVA) | Colombia, café (EVA) |
+|---|---|---|---|
+| **Años de rendimiento medido por zona** | 45 años (1981-2025), de una sola fuente y método (NASS) | 19 años (2007-2025), dos fuentes empalmadas (MinAgricultura hasta 2018 y UPRA desde 2019); 2006 y 2018 incompletos | 19 años (2007-2025), mismas dos fuentes; 9.553 municipio-años válidos en 561 municipios |
+| **Cifras repetidas o repartidas** | 0,3 % de rendimientos repetidos en Iowa, Illinois e Indiana y 0,3 % en los siete estados nuevos (73 de 24.341) | 23,5 % de rendimientos repetidos frente al año anterior | 5,6 % repetidos, pero con indicios de reparto de una cifra mayor entre municipios (1.044 municipio-años) y coincidencia casi exacta con la Federación desde 2013 |
+| **Pagos reales de seguros para validar** | Sí: la RMA publica indemnizaciones por condado, cultivo, causa y mes desde 1989 | No se encontró una base pública de siniestros agrícolas por municipio y causa; solo agregados por ramo | No se encontró |
+| **Esos pagos son públicos por zona** | Sí, por condado | No | No |
+| **Dato de riego** | Sí: censos agropecuarios con el área de maíz con riego por condado (1997 a 2022) | Solo una lista de distritos de riego (ADR), no el área de maíz regada por municipio | No aplica a la validación hecha |
+| **Se pudo probar a ciegas** | Sí: siete estados que nunca se usaron para entrenar. El modelo pasó (AUC 0,74 frente a 0,66 de la regla de lluvia), pero el semáforo no | No: no hay otra región con datos comparables ni pagos para contrastar | No: solo 3 años de prueba (2023-2025) y sin otra zona independiente |
+
+## Tres recomendaciones
+
+Cada una se apoya en un hallazgo del proyecto, no en una cifra supuesta.
+
+1. **Para la UPRA y el Ministerio de Agricultura: publicar el método y la fuente del rendimiento municipal de la EVA, y dejar de empalmar series sin avisar.** *Hallazgo:* la EVA de maíz repite el 23,5 % de los rendimientos frente al año anterior (0,3 % en EE. UU.), la de café tiene indicios de reparto proporcional y coincide con la Federación desde 2013, y el cambio de fuente en 2019 crea un bache artificial. Sin saber cómo se calcula la cifra municipal, ningún modelo puede separar clima de método de medición.
+2. **Para Finagro y las aseguradoras que operan el seguro agropecuario: publicar, por municipio, año, cultivo y causa, las indemnizaciones del seguro agropecuario (sin datos personales).** *Hallazgo:* en EE. UU. se pudo comparar el índice con lo que de verdad pagó el seguro, por condado y causa: por ejemplo, ver que en Minnesota la sequía es solo el 26 % de lo pagado, lo que encaja con que allí el modelo no acierte. En Colombia ese contraste es imposible: solo hay agregados por ramo.
+3. **Para Finagro y la UPRA: empezar con un piloto de contrato simple, con índice público, en una zona con buenos datos, y medirlo contra pagos reales antes de ampliarlo.** *Hallazgo:* en EE. UU. un contrato que cualquiera puede leer (el índice de sequía de Palmer, con un pago proporcional) se compara con el modelo en igualdad de frecuencia de pago. Resultado: el Palmer iguala a la regla de lluvia (AUC 0,66) y queda a 0,08 del modelo (0,74), así que el modelo sí aporta algo más; pero un contrato así se puede escribir y auditar sin modelo, y sirve como piso para saber si uno más complejo aporta algo. Ojo: con pago proporcional y suma asegurada de 100 % pagó en 2012 el triple de la pérdida real. **El cierre (`docs/resultados_cierre.md`) probó sumas de 50 % y 75 % con un tope anual de 2 veces la prima pura: el tope arregla 2012, pero el contrato sigue pagando más de 1,5 veces la pérdida en 18 a 23 de 35 años, así que no es vendible tal cual: hay que rediseñar el pago, no solo ponerle techo.** En Colombia hoy no se puede elegir la zona con datos, porque faltan los puntos 1 y 2.
+
+**Dos hallazgos del cierre que cambian lo que debe tener el piloto:**
+- **El modelo aprende sobre todo clima** (sin latitud, longitud ni estado el acierto pasa de 0,739 a 0,734), así que lo que se traslada entre zonas es la relación entre clima y pérdida. Por eso importa más tener un buen dato de cosecha que un buen modelo.
+- **Para usar las probabilidades en una zona nueva hacen falta unos 15 años de su propia historia de rendimiento** (con menos, recalibrar empeora las cosas). En Colombia el rendimiento municipal tiene 19 años y con fuentes empalmadas: hoy alcanza para el orden entre municipios, no para probabilidades calibradas.
+
+**Lo que no se puede decir:** que el modelo de EE. UU. funcione en Colombia, ni que el índice reemplace al seguro tradicional. El seguro real cubre más riesgos (precio, exceso de lluvia) y paga por finca.

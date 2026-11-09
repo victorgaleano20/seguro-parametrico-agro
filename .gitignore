@@ -1,0 +1,39 @@
+# --- Datos crudos: se descargan con scripts/01_descargar_datos.py, 27 y 33 ---
+datos/crudos/
+
+# --- Tablas procesadas de más de 10 MB: se regeneran con los scripts ---
+# (Git no filtra por tamaño; si un CSV nuevo pasa de 10 MB, agrégalo aquí)
+datos/procesados/eeuu_ciegas_base.csv
+
+# --- Entornos virtuales y caché de Python ---
+.venv/
+venv/
+.venvs/
+env/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# --- Claves y secretos (la key de NASS va SOLO en la variable de entorno NASS_API_KEY) ---
+.env
+.env.*
+*.key
+*.pem
+*api_key*
+*apikey*
+*secret*
+*credencial*
+*clave*
+.streamlit/secrets.toml
+
+# --- Archivos temporales ---
+*.parcial
+*.zip
+~$*
+.DS_Store
+Thumbs.db
+
+# --- MLflow: corridas y modelos locales (se regeneran con scripts/29_modelos_eeuu.py y 35_prueba_ciegas.py) ---
+mlflow.db
+mlruns/
+mlartifacts/

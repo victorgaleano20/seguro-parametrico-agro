@@ -1,0 +1,20 @@
+{
+ "anio_dolares": 2025,
+ "recargo": 0.3,
+ "subsidio_real_2014_2018": {
+  "diez estados": 0.5966575474562462,
+  "siete estados nuevos": 0.6317636460614496,
+  "tres estados originales": 0.5440315543007286
+ },
+ "ao_implicito_gao": 0.1278794527055615,
+ "ao_ejemplo_gao": 0.185,
+ "ao_gao_anual_usd": 1400000000.0,
+ "prima_nacional_2011_2015_usd": 54739051911.0,
+ "costo_indice_supuestos": [
+  0.05,
+  0.1,
+  0.2
+ ],
+ "perdida_total_1988_2025_usd": 60431325146.76264,
+ "perdida_2012_usd": 22197414958.104088
+}

@@ -1,0 +1,11 @@
+{
+ "modelo": "lightgbm",
+ "conjunto": "todas",
+ "parametros": {
+  "num_leaves": 31,
+  "min_child_samples": 50
+ },
+ "auc_validacion": 0.9695442693167962,
+ "umbral_prob_validacion": 0.024349726270443562,
+ "version_registro": 3
+}

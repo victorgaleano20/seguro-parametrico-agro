@@ -1,0 +1,13 @@
+{
+ "estados_mejores_que_tasa_media_por_K": {
+  "0": 4,
+  "3": 0,
+  "5": 1,
+  "10": 3,
+  "15": 5
+ },
+ "minimo_estados": 5,
+ "menor_K_que_cumple": 15,
+ "ninguno_cumple": false,
+ "anios_de_evaluacion": "2006-2025"
+}

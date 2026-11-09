@@ -1,0 +1,17 @@
+{
+ "causa, 1999-2025 (principal)": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": false,
+  "cumple": false
+ },
+ "causa, 2006-2025 (mismos años que el semáforo de 36)": {
+  "heidke": false,
+  "pct_perdidas_captadas": false,
+  "de_cada_100": true,
+  "cumple": false
+ },
+ "algun_semaforo_cumple": false,
+ "semaforo_36_cumple": false,
+ "semaforo_causa_cumple": false
+}

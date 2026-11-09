@@ -1,0 +1,23 @@
+{
+ "auc_original": 0.7391706701328872,
+ "auc_sin_ubicacion": 0.7340658387034771,
+ "auc_regla": 0.6593704962089224,
+ "dif_auc_original_menos_sin": 0.005104831429410095,
+ "umbral": 0.02,
+ "aprende_sobre_todo_clima": true,
+ "variables_usadas": [
+  "lluvia_may",
+  "lluvia_jun",
+  "lluvia_jul",
+  "lluvia_ago",
+  "lluvia_sep",
+  "racha_meses_secos",
+  "deficit_jul_ago",
+  "tmax_jun",
+  "tmax_jul",
+  "tmax_ago",
+  "palmer_jun",
+  "palmer_jul",
+  "palmer_ago"
+ ]
+}

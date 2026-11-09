@@ -1,0 +1,12 @@
+{
+ "auc_modelo": 0.7391706701328872,
+ "auc_regla": 0.6593704962089224,
+ "dif_auc": 0.07980017392396477,
+ "heidke_modelo": 0.31812003420037727,
+ "heidke_regla": 0.21820881404596237,
+ "p_auc_modelo": 0.000999000999000999,
+ "cumple_auc_mas_005": true,
+ "cumple_heidke_mayor": true,
+ "cumple_p_menor_005": true,
+ "pasa_la_prueba": true
+}

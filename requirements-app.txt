@@ -1,0 +1,5 @@
+# Solo lo que necesita app.py (para Streamlit Community Cloud). Mismas versiones que requirements.txt.
+pandas==3.1.0
+numpy==2.5.4
+matplotlib==3.11.2
+streamlit==1.66.1
