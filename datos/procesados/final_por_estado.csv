@@ -1,0 +1,113 @@
+clave,modelo,estado,perdidas,auc
+logistica_A,Regresión logística [clima mensual],Kansas,241,0.7625833042392859
+logistica_A,Regresión logística [clima mensual],Minnesota,166,0.3220442746596141
+logistica_A,Regresión logística [clima mensual],Missouri,425,0.7543661971830986
+logistica_A,Regresión logística [clima mensual],Nebraska,204,0.631565886649333
+logistica_A,Regresión logística [clima mensual],Ohio,260,0.7994714975255087
+logistica_A,Regresión logística [clima mensual],South Dakota,206,0.7151301787224117
+logistica_A,Regresión logística [clima mensual],Wisconsin,120,0.5635867782152231
+splines_A,Logística con splines [clima mensual],Kansas,241,0.8277189545916587
+splines_A,Logística con splines [clima mensual],Minnesota,166,0.5602545684091379
+splines_A,Logística con splines [clima mensual],Missouri,425,0.8067649820491578
+splines_A,Logística con splines [clima mensual],Nebraska,204,0.7065175522419017
+splines_A,Logística con splines [clima mensual],Ohio,260,0.8658566016985397
+splines_A,Logística con splines [clima mensual],South Dakota,206,0.7644574185836323
+splines_A,Logística con splines [clima mensual],Wisconsin,120,0.7033751640419947
+monotono_A,Boosting monótono [clima mensual],Kansas,241,0.7949827443977223
+monotono_A,Boosting monótono [clima mensual],Minnesota,166,0.355288362120569
+monotono_A,Boosting monótono [clima mensual],Missouri,425,0.7490831262082298
+monotono_A,Boosting monótono [clima mensual],Nebraska,204,0.6320594161351734
+monotono_A,Boosting monótono [clima mensual],Ohio,260,0.8295900287163195
+monotono_A,Boosting monótono [clima mensual],South Dakota,206,0.721068762937695
+monotono_A,Boosting monótono [clima mensual],Wisconsin,120,0.5771140912073491
+bosque_A,Bosque aleatorio [clima mensual],Kansas,241,0.7998133861454662
+bosque_A,Bosque aleatorio [clima mensual],Minnesota,166,0.46484855410803105
+bosque_A,Bosque aleatorio [clima mensual],Missouri,425,0.788557856945595
+bosque_A,Bosque aleatorio [clima mensual],Nebraska,204,0.6667074083127772
+bosque_A,Bosque aleatorio [clima mensual],Ohio,260,0.8419655404166922
+bosque_A,Bosque aleatorio [clima mensual],South Dakota,206,0.7084900434414998
+bosque_A,Bosque aleatorio [clima mensual],Wisconsin,120,0.6487184219160106
+boosting_A,Boosting de gradiente [clima mensual],Kansas,241,0.7944775893444724
+boosting_A,Boosting de gradiente [clima mensual],Minnesota,166,0.36516526811854466
+boosting_A,Boosting de gradiente [clima mensual],Missouri,425,0.7529146644573323
+boosting_A,Boosting de gradiente [clima mensual],Nebraska,204,0.620673051993748
+boosting_A,Boosting de gradiente [clima mensual],Ohio,260,0.8357502902181217
+boosting_A,Boosting de gradiente [clima mensual],South Dakota,206,0.7047472229511065
+boosting_A,Boosting de gradiente [clima mensual],Wisconsin,120,0.5961860236220472
+logistica_B,Regresión logística [clima + grados-día],Kansas,241,0.7410331116006463
+logistica_B,Regresión logística [clima + grados-día],Minnesota,166,0.2990661834329187
+logistica_B,Regresión logística [clima + grados-día],Missouri,425,0.7869837061585198
+logistica_B,Regresión logística [clima + grados-día],Nebraska,204,0.6267917064823663
+logistica_B,Regresión logística [clima + grados-día],Ohio,260,0.7870486344473635
+logistica_B,Regresión logística [clima + grados-día],South Dakota,206,0.7220108457972535
+logistica_B,Regresión logística [clima + grados-día],Wisconsin,120,0.5461696194225721
+splines_B,Logística con splines [clima + grados-día],Kansas,241,0.8114304075535356
+splines_B,Logística con splines [clima + grados-día],Minnesota,166,0.5241861755966957
+splines_B,Logística con splines [clima + grados-día],Missouri,425,0.840149130074565
+splines_B,Logística con splines [clima + grados-día],Nebraska,204,0.6933913346222509
+splines_B,Logística con splines [clima + grados-día],Ohio,260,0.8594183417852996
+splines_B,Logística con splines [clima + grados-día],South Dakota,206,0.7489431178751567
+splines_B,Logística con splines [clima + grados-día],Wisconsin,120,0.6378567913385826
+monotono_B,Boosting monótono [clima + grados-día],Kansas,241,0.7861757445243972
+monotono_B,Boosting monótono [clima + grados-día],Minnesota,166,0.3071921833676168
+monotono_B,Boosting monótono [clima + grados-día],Missouri,425,0.7711217895608948
+monotono_B,Boosting monótono [clima + grados-día],Nebraska,204,0.6354752327829508
+monotono_B,Boosting monótono [clima + grados-día],Ohio,260,0.7456726950571271
+monotono_B,Boosting monótono [clima + grados-día],South Dakota,206,0.6880903962214644
+monotono_B,Boosting monótono [clima + grados-día],Wisconsin,120,0.520408874671916
+bosque_B,Bosque aleatorio [clima + grados-día],Kansas,241,0.7986176980377739
+bosque_B,Bosque aleatorio [clima + grados-día],Minnesota,166,0.4135131311152469
+bosque_B,Bosque aleatorio [clima + grados-día],Missouri,425,0.8276752278376138
+bosque_B,Bosque aleatorio [clima + grados-día],Nebraska,204,0.6482005155670126
+bosque_B,Bosque aleatorio [clima + grados-día],Ohio,260,0.8208147491904442
+bosque_B,Bosque aleatorio [clima + grados-día],South Dakota,206,0.7163893262194233
+bosque_B,Bosque aleatorio [clima + grados-día],Wisconsin,120,0.6009001804461942
+boosting_B,Boosting de gradiente [clima + grados-día],Kansas,241,0.7767369146303407
+boosting_B,Boosting de gradiente [clima + grados-día],Minnesota,166,0.33163684548492073
+boosting_B,Boosting de gradiente [clima + grados-día],Missouri,425,0.7465307925987297
+boosting_B,Boosting de gradiente [clima + grados-día],Nebraska,204,0.6369335985244117
+boosting_B,Boosting de gradiente [clima + grados-día],Ohio,260,0.7820736848536689
+boosting_B,Boosting de gradiente [clima + grados-día],South Dakota,206,0.7238476340418089
+boosting_B,Boosting de gradiente [clima + grados-día],Wisconsin,120,0.5195825131233596
+lgbm_B,LightGBM (referencia) [clima + grados-día],Kansas,241,0.7910759030225883
+lgbm_B,LightGBM (referencia) [clima + grados-día],Minnesota,166,0.4327717373559278
+lgbm_B,LightGBM (referencia) [clima + grados-día],Missouri,425,0.7830687655343828
+lgbm_B,LightGBM (referencia) [clima + grados-día],Nebraska,204,0.6341900190374601
+lgbm_B,LightGBM (referencia) [clima + grados-día],Ohio,260,0.7975804973422131
+lgbm_B,LightGBM (referencia) [clima + grados-día],South Dakota,206,0.7157679524184379
+lgbm_B,LightGBM (referencia) [clima + grados-día],Wisconsin,120,0.6428067585301838
+ref_regla,Referencia: regla de lluvia jun-ago,Kansas,241,0.7428003818786824
+ref_regla,Referencia: regla de lluvia jun-ago,Minnesota,166,0.3850551256516581
+ref_regla,Referencia: regla de lluvia jun-ago,Missouri,425,0.6604739022369511
+ref_regla,Referencia: regla de lluvia jun-ago,Nebraska,204,0.6070931205878649
+ref_regla,Referencia: regla de lluvia jun-ago,Ohio,260,0.8278533023767336
+ref_regla,Referencia: regla de lluvia jun-ago,South Dakota,206,0.655489227091169
+ref_regla,Referencia: regla de lluvia jun-ago,Wisconsin,120,0.6672818241469817
+ref_calor,Referencia: índice de calor jul-ago,Kansas,241,0.8115153724707489
+ref_calor,Referencia: índice de calor jul-ago,Minnesota,166,0.34855138712029693
+ref_calor,Referencia: índice de calor jul-ago,Missouri,425,0.8146948356807513
+ref_calor,Referencia: índice de calor jul-ago,Nebraska,204,0.640441083875938
+ref_calor,Referencia: índice de calor jul-ago,Ohio,260,0.8384737581719314
+ref_calor,Referencia: índice de calor jul-ago,South Dakota,206,0.7477769031167091
+ref_calor,Referencia: índice de calor jul-ago,Wisconsin,120,0.5758120078740158
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,Kansas,241,0.7124586375334838
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,Minnesota,166,0.3187846235892078
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,Missouri,425,0.7644589892294946
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,Nebraska,204,0.6329103609709845
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,Ohio,260,0.7994890633591983
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,South Dakota,206,0.7376454124026939
+ref_gd29,Referencia: grados-día > 29 °C jun-ago,Wisconsin,120,0.47636770013123364
+ref_tasa,Referencia: tasa previa del condado,Kansas,241,0.5625836132026212
+ref_tasa,Referencia: tasa previa del condado,Minnesota,166,0.5582914313078873
+ref_tasa,Referencia: tasa previa del condado,Missouri,425,0.5022524164595416
+ref_tasa,Referencia: tasa previa del condado,Nebraska,204,0.5742331311066172
+ref_tasa,Referencia: tasa previa del condado,Ohio,260,0.4975285635730433
+ref_tasa,Referencia: tasa previa del condado,South Dakota,206,0.5311707338406367
+ref_tasa,Referencia: tasa previa del condado,Wisconsin,120,0.5457574639107613
+ref_azar,Referencia: azar,Kansas,241,0.5285806533338688
+ref_azar,Referencia: azar,Minnesota,166,0.49840010448297256
+ref_azar,Referencia: azar,Missouri,425,0.4994653410660038
+ref_azar,Referencia: azar,Nebraska,204,0.5029185833759269
+ref_azar,Referencia: azar,Ohio,260,0.5120073929247877
+ref_azar,Referencia: azar,South Dakota,206,0.48425245633983494
+ref_azar,Referencia: azar,Wisconsin,120,0.49370078740157486

@@ -663,3 +663,42 @@ Detalle: `docs/resultados_cierre.md`. Scripts `40` a `46`. El plan se subió ant
 - Por sí solas, dentro de cada año, las mejores variables son la temperatura máxima de agosto (0,676), la lluvia de julio (0,674) y Palmer (0,67); los grados-día por encima de 29 °C, 0,61.
 - Relaciones no lineales, en U (exceso de agua) e interacción fuerte entre calor y sequía (47 % de pérdidas con sequía y calor muy altos).
 - **Consecuencia para la sexta parte:** su plan, congelado antes del EDA, usa grados-día absolutos. No se cambia; si el conjunto B no mejora, la explicación probable es esta, y probar grados-día frente a lo normal sería un análisis nuevo con su propio plan.
+
+## 2026-11-08 (octava parte): grados-día frente a lo normal (plan, escrito antes de correr; EXPLORATORIO)
+
+**Por qué:** el EDA mostró que los grados-día en valor absoluto no se trasladan a los estados nuevos, mientras que las variables medidas frente a lo normal del condado sí.
+
+**Advertencia de método, fijada de antemano:** la idea salió de mirar en el EDA la relación entre variables y pérdida **en los estados de la prueba a ciegas**. Por eso su resultado en esos estados **no es una prueba a ciegas limpia**: se reporta como exploratorio y **no puede cambiar la elección del modelo final** de la sexta parte. Si funciona, queda como recomendación para un trabajo futuro con datos nuevos.
+
+**Conjunto C:** el conjunto A (clima mensual frente a lo normal) más los grados-día de 10 a 29 °C y por encima de 29 °C de junio, julio, agosto y junio a agosto, y los días de 35 °C de junio a agosto, **cada uno como diferencia frente al promedio 1981-1994 del mismo condado** (la misma ventana de lo normal que la lluvia y la temperatura de `28`).
+
+**Esquema y métricas:** idénticos a la sexta parte (entrena con Iowa, Illinois e Indiana; predice año por año los siete estados nuevos; los mismos 5 modelos y rejillas; selección 1991-2010 y confirmación 2011-2025). Se compara solo contra los resultados de la sexta parte. Script: `scripts/52_grados_dia_anomalia.py`.
+
+**Resultado de la sexta parte (comparación final a ciegas; `scripts/50_comparacion_final.py`):**
+- **Elegido con el criterio congelado: logística con splines, conjunto A (clima mensual frente a lo normal, sin ubicación ni grados-día).** Puntaje de selección 0,694; el siguiente (splines con grados-día) 0,677. Hiperparámetro del modelo final: C = 0,1; calibrado con isotónica; entrenado con los diez estados (33.411 filas). Reemplaza al bosque de la cuarta parte en `modelos/modelo_final.joblib`.
+- **Siete estados nuevos, 1991-2025:** AUC 0,762 (rango 0,64-0,85), sin 2012 0,738, dentro del año 0,700 (27 años), Heidke 0,308. El índice de calor: 0,710 / 0,676 / 0,679; la regla de lluvia: 0,659 / 0,620 / 0,650. El LightGBM original con ubicación daba 0,739.
+- **Confirmación 2011-2025:** AUC 0,856 frente a 0,835 del mejor índice simple (calor): **ventaja de 0,021, apenas por encima del umbral de 0,02**. Dentro del año, en confirmación, el elegido (0,747) queda **por debajo** del índice de calor (0,764). En confirmación los mejores fueron las variantes con grados-día (LightGBM 0,880; bosque 0,872), que en selección habían salido peor: el orden de los modelos depende del periodo, y los rangos de 95 % se superponen.
+- **Por estado (1991-2025):** el elegido es el mejor o casi el mejor en todos: Ohio 0,866, Kansas 0,828, Missouri 0,807, South Dakota 0,764, Nebraska 0,707, Wisconsin 0,703 (ahora supera a la regla, 0,667) y Minnesota 0,560 (sigue débil, aunque es el único por encima de 0,55).
+- **Calibración en estados nuevos:** Brier 0,093 frente a 0,092 de la tasa media: sus probabilidades siguen sin estar calibradas allá sin datos locales.
+- **Lectura honesta (fijada de antemano):** el modelo supera al mejor índice simple por más de 0,02 en confirmación, así que cumple, pero por muy poco y no dentro de cada año. Conclusión: el aprendizaje automático aporta una mejora pequeña y consistente sobre un índice simple de calor en el total de 1991-2025 (0,762 frente a 0,710), y el modelo más simple de los que aprenden (curvas suaves sobre clima frente a lo normal) generaliza mejor que los árboles. Para un contrato, el índice de calor sigue siendo una alternativa casi igual de buena y mucho más fácil de explicar.
+
+## 2026-11-08 (novena parte): defecto en la calibración y corrección del modelo final
+
+**Hallazgo:** al probar el modelo final guardado, su probabilidad "calibrada" daba 0,16 para todos los condados de 2012, mientras la probabilidad sin calibrar iba de 0,66 a 0,92. La calibración isotónica se ajusta con los 3 años más recientes (2023-2025), que casi no tuvieron pérdidas, y la curva quedó plana.
+
+**Comprobación fuera de muestra (siete estados nuevos, 1991-2025, logística con splines A):** Brier sin calibrar 0,0864; calibrado con 3 años 0,0935; tasa media 0,0919. En 7 años la calibración produjo 3 valores distintos o menos. **La calibración de 3 años empeora las probabilidades; sin ella, el modelo es mejor que la tasa media incluso en estados que nunca vio.** Matiz: sin calibrar exagera en el décimo de más riesgo (predice 60 %, ocurrió 38 %).
+
+**Corrección (tomada después de ver los resultados; no cambia la elección del modelo):** el modelo final se guarda sin calibrador (`50_comparacion_final.guardar_modelo_final`) y `48` solo muestra la probabilidad calibrada si el modelo trae calibrador. **Esto matiza una conclusión anterior del proyecto** ("las probabilidades no sirven en estados nuevos sin unos 15 años locales"): parte del problema venía de la calibración con una ventana de 3 años.
+
+## 2026-11-08 (décima parte): dólares con el modelo final (plan, escrito antes de correr)
+
+**Por qué:** las cifras en dólares ("$34 de cada $100") salían del LightGBM anterior y de su modelo del tamaño de la pérdida, que casi no aporta (correlación 0,24). Hay que recalcularlas con el modelo final.
+
+**Predicciones:** el modelo final (logística con splines, conjunto A, sin calibrar), año por año de 1991 a 2025, **entrenado solo con Iowa, Illinois e Indiana y años anteriores**, prediciendo los diez estados (en los tres originales es fuera de tiempo; en los siete nuevos, a ciegas). Se guarda en `datos/procesados/modelo_final_predicciones.csv`.
+
+**Regla de pago, igual para todos los disparadores, para que solo cambie a quién se paga:**
+- Cada disparador paga en la misma cantidad de condado-años que la regla de lluvia en todo el periodo.
+- Monto = valor esperado de la cosecha × **tamaño medio de las pérdidas de los años anteriores** (faltante promedio de los condado-años con pérdida antes de t, en los tres estados originales). No se usa el modelo del tamaño.
+- Disparadores: modelo final, índice de calor de julio y agosto, regla de lluvia; y pagar al azar (valor esperado).
+
+**Métricas:** pagos totales, pérdida cubierta, de cada $100 a condados con pérdida (etiqueta `perdida_previa`), para diez estados, siete nuevos y tres originales, con y sin 2012. Dólares de 2025, con los mismos supuestos de `38` (área cosechada, precio nacional). **No se compara con el seguro real.** Script: `scripts/53_dolares_modelo_final.py`.

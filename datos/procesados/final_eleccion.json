@@ -1,0 +1,14 @@
+{
+  "elegido": "splines_A",
+  "nombre": "Logística con splines [clima mensual]",
+  "puntaje_seleccion": 0.6938823171365041,
+  "mejor_puntaje_seleccion": 0.6938823171365041,
+  "empatados_dentro_de_0_01": [
+    "splines_A"
+  ],
+  "auc_confirmacion": 0.855746372310205,
+  "auc_dentro_confirmacion": 0.7470609542565206,
+  "mejor_indice_simple_confirmacion": 0.8348516468560021,
+  "ventaja_sobre_indice_simple": 0.0208947254542029,
+  "supera_indice_simple_por_mas_de_0_02": true
+}

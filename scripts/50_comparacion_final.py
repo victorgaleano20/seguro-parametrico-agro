@@ -203,22 +203,29 @@ def main():
     print(f"\nElegido: {nombre_clave(elegido)}; empatados dentro de 0,01: {candidatos}")
     print(f"Confirmación: AUC {conf.loc[elegido, 'auc']:.3f} frente a {mejor_simple:.3f} del mejor índice simple (ventaja {ventaja:+.3f})")
 
-    # Modelo final: diez estados, 1981-2025
+    guardar_modelo_final(b, elegido, eleccion)
+
+
+def guardar_modelo_final(b, elegido, eleccion):
+    """Reentrena el elegido con los diez estados (1981-2025) y lo guarda SIN calibrador.
+    Corrección del 2026-11-08 (bitácora, novena parte): fuera de muestra, la calibración isotónica con los 3 años
+    más recientes empeoró las probabilidades (Brier 0,0935 frente a 0,0864 sin calibrar y 0,0919 de la tasa media),
+    porque esos años a veces casi no tienen pérdidas y la curva queda plana. Con 2023-2025 dejaba un solo valor (0,16)."""
     nombre, conjunto = elegido.rsplit("_", 1)
     cols = CONJUNTOS[conjunto]
     tr = pd.concat([e47.etiquetas(b[b["grupo"].isin(ORIGINALES)], HASTA + 1)[0], e47.etiquetas(b[~b["grupo"].isin(ORIGINALES)], HASTA + 1)[0]], ignore_index=True)
-    final, cal, p = ajustar(nombre, cols, tr)
+    final, _, p = ajustar(nombre, cols, tr)
     MODELOS_DIR.mkdir(exist_ok=True)
-    joblib.dump({"modelo": final, "calibrador": cal, "columnas": cols}, MODELOS_DIR / "modelo_final.joblib")
+    joblib.dump({"modelo": final, "calibrador": None, "columnas": cols}, MODELOS_DIR / "modelo_final.joblib")
     meta = {"modelo": nombre_clave(elegido), "clave": elegido, "hiperparametros": p, "entrenado_con": "diez estados, 1981-2025",
-            "filas_entrenamiento": len(tr), "perdidas_entrenamiento": int(tr["y"].sum()), "calibrado": cal is not None, "variables": cols,
+            "filas_entrenamiento": len(tr), "perdidas_entrenamiento": int(tr["y"].sum()), "calibrado": False, "variables": cols,
             "etiqueta": "rendimiento del condado de 80 % o menos de su tendencia lineal (años anteriores)",
             "como_predecir": "python scripts/48_predecir.py archivo.csv (columnas: las de 'variables')",
-            "advertencia": "Probabilidades calibradas con los tres años más recientes de los diez estados; en otra zona hay que recalibrar con datos locales.",
+            "advertencia": ("Probabilidad sin calibrar: fuera de muestra fue mejor que calibrarla con 3 años (Brier 0,0864 frente a 0,0935; tasa media 0,0919), "
+                            "pero en el décimo de más riesgo exagera (dice 60 % y ocurrió 38 % en los siete estados nuevos). Úsese sobre todo para ordenar el riesgo."),
             "eleccion": eleccion}
     (MODELOS_DIR / "modelo_final.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2, default=float), encoding="utf-8")
-    print(f"\nModelo final guardado: {nombre_clave(elegido)}, {p}; calibrado: {cal is not None}; {len(tr):,} filas de entrenamiento")
-
+    print(f"\nModelo final guardado: {nombre_clave(elegido)}, {p}; sin calibrador; {len(tr):,} filas de entrenamiento")
 
 if __name__ == "__main__":
     main()

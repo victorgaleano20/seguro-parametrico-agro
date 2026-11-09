@@ -6,7 +6,7 @@ Entrada: un CSV con una fila por condado y año y las columnas de modelos/modelo
   latitud, longitud, lluvia_may ... lluvia_sep (% de lo normal), racha_meses_secos, deficit_jul_ago,
   tmax_jun ... tmax_ago (diferencia en °C frente a lo normal), palmer_jun ... palmer_ago y grupo (FIPS del estado: 17, 18 o 19).
   Son las mismas columnas de datos/procesados/eeuu_sequia_base.csv (script 28).
-Salida: el mismo CSV con prob_perdida (sin calibrar) y prob_perdida_calibrada, en <archivo>_predicciones.csv.
+Salida: el mismo CSV con prob_perdida (y prob_perdida_calibrada si el modelo trae calibrador), en <archivo>_predicciones.csv.
 
 Uso:  python scripts/48_predecir.py datos/procesados/eeuu_sequia_base.csv
 """
@@ -35,7 +35,8 @@ def main():
         sys.exit(1)
     prob = paquete["modelo"].predict_proba(d[paquete["columnas"]])[:, 1]
     d["prob_perdida"] = prob
-    d["prob_perdida_calibrada"] = paquete["calibrador"].predict(prob) if paquete["calibrador"] is not None else prob
+    if paquete["calibrador"] is not None:
+        d["prob_perdida_calibrada"] = paquete["calibrador"].predict(prob)
     salida = entrada.with_name(entrada.stem + "_predicciones.csv")
     d.to_csv(salida, index=False)
     print(f"Modelo: {meta['modelo']} ({meta['entrenado_con']})")
