@@ -142,7 +142,11 @@ ax.legend(loc="lower left")
 ax.set_ylim(0, None)
 plt.show()
 ''')
-md("{{INTERPRETACION_COBERTURA}}")
+md("""
+**Lectura:** hay 799 condados (293 de entrenamiento y 506 de prueba a ciegas) con 33.411 condado-años. Casi todos los estados cubren 1981-2025 completo. El número de condados con dato baja en los últimos años, porque NASS publica menos condados (en 2024 y 2025, alrededor de 200 en los tres estados de entrenamiento).
+
+**Implica:** los años recientes pesan menos en la evaluación; los resultados de 2019-2025 se apoyan en menos condados.
+""")
 
 # ------------------------------------------------------------------------------------------------ 3. calidad
 md("## 3. Calidad de los datos")
@@ -163,7 +167,14 @@ falt = falt.loc[:, falt.max() > 0]
 md("**Faltantes por variable y estado (% de condado-años; solo variables con algún faltante):**")
 display(falt.round(2) if not falt.empty else Markdown("Ninguna variable del modelo tiene faltantes."))
 ''')
-md("{{INTERPRETACION_CALIDAD}}")
+md("""
+**Lectura:**
+- **Cifras repetidas:** menos de 1 % en todos los estados (lo más alto, Minnesota con 1,2 %). Es la diferencia de fondo con Colombia (23,5 %).
+- **Faltantes:** ninguna variable del modelo tiene faltantes.
+- **Condados excluidos por saltos raros de área:** casi ninguno en la mayoría de estados, pero **en Kansas solo entra el 52 % de los condado-años** (51 de 105 condados tienen saltos de área, probablemente por cambios entre maíz de riego y de secano) y en South Dakota el 79 %. Kansas queda representado por una muestra más pequeña y quizá distinta.
+
+**Implica:** los datos son limpios; los resultados de Kansas y South Dakota se deben leer con más cautela.
+""")
 
 # ------------------------------------------------------------------------------------------------ 4. rendimiento y tendencia
 md("## 4. El rendimiento y su tendencia")
@@ -200,7 +211,11 @@ ax.legend(loc="upper left")
 plt.show()
 mostrar(b.groupby("conjunto")["rend_relativo"].describe(percentiles=[0.01, 0.05, 0.5, 0.95]).round(3).reset_index())
 ''')
-md("{{INTERPRETACION_TENDENCIA}}")
+md("""
+**Lectura:** en los estados de entrenamiento, el rendimiento mediano pasó de unas 7 a 8 t/ha a comienzos de los años 80 a unas 13 t/ha en 2023-2025, por la tecnología, y los estados de prueba rinden algo menos que los de entrenamiento. Por eso la pérdida **no** se puede medir con el rendimiento en bruto: se mide contra la tendencia de cada condado (en el ejemplo, los puntos naranjas quedan bajo la línea punteada del 80 %). La distribución del rendimiento relativo es casi igual en los dos grupos (mediana 1,03 y 1,02; percentil 5: 0,68 en ambos).
+
+**Implica:** la etiqueta de pérdida es comparable entre estados; para no mirar el futuro, el modelo debe calcular la tendencia solo con años anteriores (como se hace).
+""")
 
 # ------------------------------------------------------------------------------------------------ 5. objetivo
 md("## 5. La variable objetivo: la pérdida de cosecha")
@@ -242,7 +257,15 @@ for u in [0.7, 0.8, 0.9]:
 md("**Sensibilidad al umbral de pérdida:**")
 mostrar(pd.DataFrame(umb))
 ''')
-md("{{INTERPRETACION_OBJETIVO}}")
+md("""
+**Lectura:**
+- **Clases desbalanceadas:** 10,6 % de los condado-años son pérdida (10,1 % en entrenamiento y 10,9 % en prueba a ciegas).
+- **Las pérdidas llegan en bloque:** en 1983, 1988 y 2012 pierde a la vez buena parte de casi todos los estados, y en 1993 los del norte y el oeste (franjas oscuras verticales del mapa de calor), y los 5 peores años reúnen el 57 % de las pérdidas. Pero también hay años malos solo regionales (2002 en Ohio, Indiana y Kansas; 2022-2023 en Kansas y South Dakota).
+- **1993 fue inundación**, no sequía: el modelo de sequía no debería verla.
+- **El umbral importa en la cantidad, no en el patrón:** con 70 % hay 5,7 % de pérdidas y 6 años "malos"; con 90 %, 20,6 % y 30 años.
+
+**Implica:** no se puede medir con exactitud (un modelo que nunca predice pérdida acierta 89 %); se usan AUC, Heidke y Brier. La muestra efectiva es de pocos años malos.
+""")
 
 # ------------------------------------------------------------------------------------------------ 6. año vs condado
 md("## 6. ¿Cuánto de la pérdida es el año y cuánto el condado?")
@@ -259,7 +282,13 @@ var = pd.DataFrame({"Agrupación": ["Año (igual para todos los condados)", "Est
 var["Parte de la variación explicada"] = var["Parte de la variación explicada"].map(pct)
 mostrar(var)
 ''')
-md("{{INTERPRETACION_ANIO}}")
+md("""
+**Lectura:** saber **el año** explica el 27 % de la variación de la pérdida, y saber **el estado en ese año** el 45 %. En cambio, saber **el condado** (cuál condado suele perder) explica solo el 3 %. La pérdida es sobre todo un fenómeno de un año en una región, no de condados "malos".
+
+**Implica:**
+- Las filas no son independientes: los condados de un mismo año se mueven juntos. **Nunca se puede validar con una partición al azar de filas**; hay que validar por años completos y calcular valores p barajando años (como se hace).
+- Un modelo puede tener buen AUC global solo por reconocer los años malos. Por eso se reporta siempre el **AUC dentro de cada año**, que mide si distingue qué condados pierden en un mismo año (lo que importa para el riesgo de base).
+""")
 
 # ------------------------------------------------------------------------------------------------ 7. cambio de distribución
 md("## 7. ¿Se parecen los estados de la prueba a ciegas a los de entrenamiento?")
@@ -289,7 +318,14 @@ fig.suptitle("Distribución de variables clave: entrenamiento frente a prueba a 
 plt.tight_layout()
 plt.show()
 ''')
-md("{{INTERPRETACION_CAMBIO}}")
+md("""
+**Lectura:**
+- **Las variables medidas frente a lo normal del condado casi no cambian** entre entrenamiento y prueba a ciegas: lluvia, déficit, temperatura máxima y Palmer tienen diferencias estandarizadas de 0,17 o menos y entre 0,6 % y 2,6 % de valores fuera del rango de entrenamiento.
+- **Los grados-día en valor absoluto sí cambian:** los estados de prueba tienen menos calor útil (diferencia de −0,36) y más días de 35 °C (+0,45); hasta 7,8 % de los valores quedan fuera del rango de entrenamiento.
+- **La ubicación cambia por completo:** el 52 % de las longitudes y el 33 % de las latitudes de los estados nuevos quedan fuera del rango de entrenamiento.
+
+**Implica:** las variables en diferencia frente a lo normal son las que se pueden trasladar a otros estados. La ubicación no se debe usar (se dejó fuera de la comparación final). Los grados-día absolutos se trasladan peor (ver la sección 8).
+""")
 
 # ------------------------------------------------------------------------------------------------ 8. relación con la pérdida
 md("""
@@ -342,7 +378,15 @@ fig.suptitle("Tasa de pérdida por décimos de cada variable", x=0.01, ha="left"
 plt.tight_layout()
 plt.show()
 ''')
-md("{{INTERPRETACION_RELACION}}")
+md("""
+**Lectura:**
+- **Por sí solas, las mejores variables dentro de cada año son la temperatura máxima de agosto (AUC 0,676), la lluvia de julio (0,674) y Palmer de julio y agosto (0,67)**, todas medidas frente a lo normal. Las mismas funcionan igual en la prueba a ciegas (0,67-0,70).
+- **Los grados-día por encima de 29 °C son buenos en lo global (0,73-0,75) pero peores dentro del año (0,61-0,64)**, y su relación con la pérdida **no se traslada**: en entrenamiento, el décimo más caluroso tiene 56 % de pérdidas; en los estados de prueba, con más calor todavía, 31 %. Allá el maíz tolera más calor (riego, variedades y clima más cálido de base).
+- **La relación no es lineal y a veces tiene forma de U:** el riesgo sube con la sequía, pero también con el exceso de agua (Palmer muy alto, lluvia de septiembre alta, quintil "muy húmedo" de la sección 9) y con veranos muy fríos (temperatura de julio muy baja).
+- **La lluvia de mayo y de septiembre casi no aporta** (AUC dentro del año cerca de 0,5).
+
+**Implica:** los modelos deben permitir relaciones no lineales; una restricción monótona estricta pierde el efecto del exceso de agua. Los grados-día convendría expresarlos frente a lo normal de cada condado para que se trasladen; en la comparación final se usan en valor absoluto, tal como se fijó en el plan antes de este análisis.
+""")
 
 # ------------------------------------------------------------------------------------------------ 9. interacción
 md("## 9. Calor y sequía juntos")
@@ -366,7 +410,11 @@ for i in range(5):
 ax.set_title("Tasa de pérdida según calor y sequía")
 plt.show()
 ''')
-md("{{INTERPRETACION_INTERACCION}}")
+md("""
+**Lectura:** el calor y la sequía juntos multiplican el riesgo: con Palmer "muy seco" y calor "muy alto", pierde el 47 % de los condado-años; con Palmer "normal", ni el calor muy alto pasa de 3 %. Cada factor por separado sube el riesgo mucho menos. También se ve el exceso de agua: con Palmer "muy húmedo" la pérdida sube a 14-15 % en los extremos de calor.
+
+**Implica:** importa la combinación de variables; los modelos que capturan interacciones (árboles, splines con varias variables) tienen ventaja sobre un índice de una sola variable.
+""")
 
 # ------------------------------------------------------------------------------------------------ 10. correlación
 md("## 10. Variables que dicen casi lo mismo")
@@ -385,7 +433,11 @@ pares["|rho|"] = pares["rho"].abs()
 md("**Pares más correlacionados:**")
 mostrar(pares.sort_values("|rho|", ascending=False).head(10).round(3).rename(columns={"level_0": "Variable 1", "level_1": "Variable 2"}))
 ''')
-md("{{INTERPRETACION_CORRELACION}}")
+md("""
+**Lectura:** hay grupos de variables que dicen casi lo mismo: Palmer de junio, julio y agosto (correlación de 0,77 a 0,89), grados-día por encima de 29 °C y días de 35 °C (0,86), y lluvia de julio y agosto con el déficit (−0,62 a −0,68).
+
+**Implica:** en la regresión logística, estas variables reparten su peso entre sí y los coeficientes no se pueden leer uno por uno; por eso se usa regularización. Los árboles toleran la redundancia, pero la importancia de cada variable se reparte entre las correlacionadas.
+""")
 
 # ------------------------------------------------------------------------------------------------ 11. mapas
 md("## 11. Dónde se pierde la cosecha")
@@ -407,7 +459,11 @@ for ax in (a1, a2):
 plt.tight_layout()
 plt.show()
 ''')
-md("{{INTERPRETACION_MAPAS}}")
+md("""
+**Lectura:** las pérdidas se concentran en el sur del área (sur de Iowa y norte de Missouri), en el noroeste (este de South Dakota y oeste de Minnesota) y en el oeste de Kansas; el calor dañino crece hacia el suroeste (Kansas y Missouri). Las zonas con más calor no son siempre las de más pérdidas (Kansas y el sur de Nebraska tienen mucho riego).
+
+**Implica:** el clima solo no explica todo el riesgo; el riego y el manejo local cambian la sensibilidad de cada zona.
+""")
 
 # ------------------------------------------------------------------------------------------------ 12. riego
 md("## 12. El riego")
@@ -422,11 +478,28 @@ t = mm.groupby("grupo_riego", observed=False).agg(condados=("tasa", "size"), tas
 t["tasa_perdida"] = t["tasa_perdida"].map(pct)
 mostrar(t.rename(columns={"grupo_riego": "Maíz con riego", "condados": "Condados", "tasa_perdida": "Tasa media de pérdida"}))
 ''')
-md("{{INTERPRETACION_RIEGO}}")
+md("""
+**Lectura:** el riego es casi nulo en Iowa, Illinois, Indiana y Ohio (mediana menor a 1 %), pero alto en Nebraska (59 % en promedio) y Kansas (38 %). Los condados con más de 25 % de maíz con riego pierden menos (7,0 % frente a 11,6 % en los de menos de 5 %).
+
+**Implica:** el modelo se entrena en estados sin riego y se aplica en estados con mucho riego: ahí sobreestima el daño del calor y la sequía. Es una fuente concreta de riesgo de base en Nebraska y Kansas; por eso la prueba a ciegas también se reporta sin los condados con más de 25 % de riego.
+""")
 
 # ------------------------------------------------------------------------------------------------ 13. conclusiones
 md("## 13. Qué implica para el modelo")
-md("{{CONCLUSIONES}}")
+md("""
+| Hallazgo del EDA | Qué implica para el modelo |
+|---|---|
+| Datos limpios: menos de 1 % de cifras repetidas y sin faltantes; en Kansas solo entra el 52 % de los condado-años | Los resultados se pueden creer; Kansas y South Dakota, con más cautela |
+| El rendimiento subió de unas 7-8 t/ha (comienzos de los 80) a unas 13 t/ha (2023-2025) | La pérdida se mide contra la tendencia de cada condado, con años anteriores |
+| 10,6 % de pérdidas | No usar exactitud; usar AUC, Heidke y Brier |
+| El año y la región explican la mayor parte de la pérdida (27 % y 45 %); el condado, 3 % | Validar por años completos (nunca partición al azar), valores p barajando años y **reportar el AUC dentro de cada año** |
+| Los 5 peores años reúnen el 57 % de las pérdidas | La muestra efectiva es de pocos años: los rangos de confianza son anchos y hay que mostrar los resultados con y sin 2012 |
+| Las variables frente a lo normal se trasladan entre estados; la ubicación no | Usar clima en diferencia frente a lo normal y dejar fuera la ubicación |
+| Los grados-día absolutos no se trasladan (los estados nuevos toleran más calor) | Probarlos en diferencia frente a lo normal antes de concluir que no aportan |
+| Relaciones no lineales, en U (exceso de agua) e interacción fuerte entre calor y sequía | Preferir modelos no lineales con interacciones; cuidado con las restricciones monótonas |
+| Variables muy correlacionadas (Palmer por meses, calor diario) | Regularizar la logística; leer la importancia por grupos de variables |
+| Riego alto en Nebraska y Kansas, con menos pérdidas | Fuente de riesgo de base; reportar los resultados sin los condados con mucho riego |
+""")
 
 nb = nbf.v4.new_notebook()
 nb["cells"] = celdas
