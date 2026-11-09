@@ -32,8 +32,9 @@ REGISTRO = CRUDOS / "registro_descargas.csv"
 PROCESADOS = RAIZ / "datos" / "procesados"
 BASE_URL = "https://www.ncei.noaa.gov/data/nclimgrid-daily/access/averages"
 
-# FIPS de los diez estados: Iowa, Illinois, Indiana, Nebraska, Minnesota, Ohio, Missouri, Kansas, South Dakota y Wisconsin
-ESTADOS = {"19", "17", "18", "31", "27", "39", "29", "20", "46", "55"}
+# OJO: los archivos de NOAA no usan el FIPS de estado sino la numeración propia de NOAA (por ejemplo, 17 = Maine).
+# Por eso se filtra por la sigla que trae cada fila ("IA: Adair County") y se traduce al FIPS del Census Bureau.
+SIGLA_A_FIPS = {"IA": "19", "IL": "17", "IN": "18", "NE": "31", "MN": "27", "OH": "39", "MO": "29", "KS": "20", "SD": "46", "WI": "55"}
 ANIOS = range(1981, 2026)
 MESES = [5, 6, 7, 8, 9]
 VARIABLES = ["tmax", "tmin"]
@@ -66,7 +67,13 @@ def bajar(variable, anio, mes):
             print(f"ERROR de red en {url}: {e}")
             return None
         if r.status_code == 200:
-            lineas = [l for l in r.text.splitlines() if l.startswith("cty,") and l.split(",")[1][:2] in ESTADOS]
+            lineas = []
+            for l in r.text.splitlines():
+                partes = l.split(",")
+                sigla = partes[2].split(":")[0].strip() if len(partes) > 2 else ""
+                if partes[0] == "cty" and sigla in SIGLA_A_FIPS:
+                    partes[1] = SIGLA_A_FIPS[sigla] + partes[1][2:]      # código NOAA -> FIPS (el condado no cambia)
+                    lineas.append(",".join(partes))
             DESTINO.mkdir(parents=True, exist_ok=True)
             destino.write_text("\n".join(lineas) + "\n", encoding="utf-8")
             anotar(url, destino)

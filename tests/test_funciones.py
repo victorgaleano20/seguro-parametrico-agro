@@ -98,3 +98,23 @@ def test_tendencia_ciclos_marca_perdida_bajo_el_80_por_ciento():
     d = pd.DataFrame({"fips": "19001", "anio": anios, "rendimiento_t_ha": rendimiento})
     t = comun.tendencia_ciclos(d, ["fips"], 10)
     assert t["perdida"].tolist() == [False] * 12 + [True]
+
+
+e49 = importlib.import_module("49_temperatura_diaria")
+
+
+def test_grados_dia_con_el_metodo_del_seno():
+    tmin, tmax = np.array([20.0, 30.0, 10.0]), np.array([38.0, 40.0, 25.0])
+    # Cruza el umbral: media 29, amplitud 9 -> 9 / pi; todo el día arriba: 35 - 29 = 6; nunca llega: 0
+    assert e49.grados_dia(tmin, tmax, 29.0) == pytest.approx([9 / np.pi, 6.0, 0.0])
+
+
+def test_grados_dia_crecen_con_el_calor():
+    base = e49.grados_dia(np.array([18.0]), np.array([32.0]), 29.0)[0]
+    mas = e49.grados_dia(np.array([18.0]), np.array([36.0]), 29.0)[0]
+    assert 0 < base < mas
+
+
+def test_las_siglas_de_noaa_se_traducen_al_fips_del_census():
+    assert e49.SIGLA_A_FIPS["IA"] == "19" and e49.SIGLA_A_FIPS["IL"] == "17" and e49.SIGLA_A_FIPS["NE"] == "31"
+    assert len(set(e49.SIGLA_A_FIPS.values())) == 10
