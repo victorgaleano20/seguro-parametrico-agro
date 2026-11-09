@@ -1,37 +1,37 @@
 # Resumen final: seguro de sequía para el maíz de EE. UU.
 
-**El problema.** Un seguro por índice paga solo, mirando un dato público (lluvia, calor). Su debilidad es el riesgo de base: puede pagar a quien no perdió y no pagar a quien sí. Con plata pública de por medio, importa que llegue a quien perdió. El maíz de EE. UU. permite probarlo: hay 45 años de rendimiento por condado, clima por condado y lo que de verdad pagó el seguro.
+**El problema.** Un seguro por índice paga solo, mirando un dato público (lluvia, calor). Su debilidad es el **riesgo de base**: puede pagar a quien no perdió y no pagar a quien sí. Con plata pública de por medio, importa que llegue a quien perdió.
 
-**Por qué EE. UU.** Allá se puede medir el método: hay rendimiento por condado de 45 años y pagos reales del seguro. En EE. UU. ya existe un seguro que paga por el rendimiento del condado, así que el índice de clima no es un producto nuevo para allá; sirve para medir el método y para decir qué necesita un país como Colombia, donde ese dato no es confiable.
+**Por qué EE. UU.** En Colombia el dato de cosecha municipal no permite medir la pérdida (23,5 % de cifras de maíz repetidas) y no hay pagos públicos de seguros. EE. UU. sirve de laboratorio: 45 años de rendimiento por condado, clima por condado y pagos reales del seguro. Allá ya existe un seguro que paga por el rendimiento del condado, así que el índice de clima no es un producto nuevo para EE. UU.: se mide el método y se aprende qué necesita Colombia.
 
-**Qué hicimos.** Un modelo (LightGBM) que estima la probabilidad y el tamaño de la pérdida por condado, con clima del verano. Se evaluó año por año sin mirar el futuro; se probó a ciegas en siete estados que nunca vio (plan congelado antes de ver los datos); se cerraron cuatro preguntas abiertas; se midió el impacto en dólares de 2025 y se dejó un simulador. Todo está en `notebooks/proyecto_final.ipynb` (versión sin código: `docs/proyecto_final.html`).
+**Qué hicimos.**
+1. **Análisis exploratorio** de 33.411 condado-años en 10 estados (`docs/eda.html`).
+2. **Cinco modelos** (logística, logística con splines, bosque aleatorio, boosting y boosting monótono), con y sin grados-día de calor diario, entrenados con 3 estados y **probados a ciegas en 7**, con el criterio de elección fijado antes de correr.
+3. **Impacto en dólares de 2025** y un **simulador**.
 
-## Los 5 resultados principales
+Todo está en `notebooks/proyecto_final.ipynb` (sin código: `docs/proyecto_final.html`).
 
-1. **El modelo pasa la prueba a ciegas.** En siete estados nuevos, acierto al ordenar 0,739 frente a 0,659 de la regla de lluvia (azar: 0,5); valor p 0,001. Gana en 6 de 7 estados.
-2. **Aprende sobre todo clima, no geografía.** Sin latitud, longitud ni estado, el acierto es 0,734 (baja 0,005).
-3. **Sus probabilidades necesitan unos 15 años locales.** Con 15 años de historia propia, 5 de 7 estados superan a la tasa media; con 10, solo 3; con 3 o 5, recalibrar empeora.
-4. **En dólares (diez estados, 1991-2025, dólares de 2025):** pérdida real de $46.341 millones. De cada $100 que pagaría el índice con el modelo, $34 llegan a condados que perdieron y $66 a condados sin pérdida; pagando al azar serían $10. No se compara con el seguro real: este paga por finca y por otras causas (precio, exceso de lluvia), así que medirlo con la pérdida del condado no es justo.
-5. **El contrato Palmer con topes no es vendible** (paga más de 1,5 veces la pérdida real en 18 a 23 de 35 años) y **ningún semáforo se sostiene** (los verdes salen mejor, pero el margen de error incluye el cero).
+## Los resultados principales
+1. **El modelo final** es una logística con curvas suaves sobre el clima del verano medido frente a lo normal de cada condado, sin ubicación. En 7 estados que nunca vio, ordena el riesgo con **AUC 0,762** (azar 0,50; sin 2012, 0,738), frente a **0,659 de la regla de lluvia**.
+2. **La ventaja sobre un índice simple de calor de julio y agosto es pequeña:** el índice saca 0,710. En 2011-2025 el modelo lo supera por 0,021 (se pedía más de 0,02), pero **dentro de cada año** el índice de calor queda por encima.
+3. **El modelo más simple generalizó mejor:** las curvas suaves superaron al bosque, al boosting y al LightGBM original (0,739). Casi toda la señal está en el calor y la falta de agua de julio y agosto.
+4. **Probabilidades:** sin calibrar son mejores que la tasa media incluso en estados nuevos (Brier 0,086 frente a 0,092), aunque exageran en el riesgo más alto. La calibración con 3 años que usaba el proyecto las empeoraba.
+5. **En dólares (diez estados, 1991-2025):** de cada $100 que pagaría el índice, llegan a condados con pérdida **$31,7 con el modelo y $32,4 con el índice de calor**, frente a $25,8 con la regla y $8,4 al azar. El modelo no supera al índice simple en dólares, y unos $2 de cada $3 van a condados sin pérdida.
 
 ## Lo que se puede decir
-- Un modelo entrenado en tres estados distingue las pérdidas en otros siete mejor que una regla de lluvia, también sin 2012 y sin los condados con mucho riego.
-- Lo que se traslada entre estados es la relación entre clima y pérdida.
-- En Minnesota la sequía pesa menos entre las causas de los siniestros (26 % frente a 36-56 % en los demás estados), lo que encaja con que allí el modelo no acierte; es una coincidencia, no una causa demostrada.
-
-## Lo que encontró la auditoría (2026-11-08)
-- **Buena parte del acierto es saber qué años fueron malos:** dando a todos los condados de un año el mismo puntaje, el acierto es 0,723 (el modelo, 0,739). Dentro de un mismo año, el modelo distingue condados con 0,708 frente a 0,650 de la regla: mejor, pero poco.
-- **LightGBM no es claramente el mejor:** el bosque aleatorio y la regresión logística quedaron muy cerca.
-- **Falta lo que recomienda la literatura:** horas de calor por encima de 29 °C y vegetación o humedad del suelo desde satélite.
+- Con buenos datos, un modelo sencillo de clima ordena el riesgo de pérdida en estados que nunca vio mejor que una regla de lluvia.
+- Lo que se traslada entre estados es el clima medido frente a lo normal de cada condado, no la ubicación ni el calor en valor absoluto.
+- Los grados-día de calor medidos frente a lo normal mejoran el acierto dentro de cada año (0,721 frente a 0,700), pero es un resultado exploratorio que hay que confirmar con datos nuevos.
 
 ## Lo que no se puede decir
-- Que el semáforo funcione, que el modelo sirva en Minnesota o en cualquier estado sin recalibrar, ni que el contrato Palmer con topes sea vendible.
+- Que el aprendizaje automático sea mucho mejor que un índice simple de calor: la ventaja es pequeña y en dólares desaparece.
+- Que el semáforo funcione, que el modelo sirva en Minnesota (0,56) o que el contrato Palmer con topes sea vendible.
 - Que el índice dirija la plata igual o mejor que el seguro real: no se midieron con la misma vara.
-- Que el índice reemplace al seguro real: este cubre más riesgos (precio, exceso de lluvia) y paga por finca.
+- Que el índice reemplace al seguro real, que cubre más riesgos (precio, exceso de lluvia) y paga por finca.
 - Que el modelo funcione en Colombia: allá no hay datos para comprobarlo.
 
 ## Tres recomendaciones para Colombia
 Detalle: `docs/requisitos_datos.md`.
 1. **UPRA y Ministerio de Agricultura:** publicar el método y la fuente del rendimiento municipal de la EVA (23,5 % de maíz repetido frente a 0,3 % en EE. UU.) y dejar de empalmar series sin avisar.
 2. **Finagro y las aseguradoras:** publicar por municipio, año, cultivo y causa las indemnizaciones del seguro agropecuario, sin datos personales.
-3. **Finagro y UPRA:** empezar con un piloto de contrato simple, con índice público, en una zona con buenos datos, y medirlo contra pagos reales antes de ampliarlo. Rediseñar el pago antes: un Palmer con tope no es vendible tal cual.
+3. **Finagro y UPRA:** empezar con un piloto de contrato simple, con un índice público de calor y sequía frente a lo normal, en una zona con buenos datos, y medirlo contra pagos reales antes de ampliarlo.

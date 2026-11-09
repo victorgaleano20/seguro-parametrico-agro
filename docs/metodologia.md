@@ -9,7 +9,7 @@ Este documento explica **qué es "el modelo"** del seguro de sequía para el ma�
 Hay dos formas de decidir cuándo paga el seguro, y el proyecto las compara:
 
 - **La regla de lluvia** (la referencia): *"si la lluvia de junio a agosto queda en el 15 % de veranos más secos del condado, el seguro paga"*. Es transparente: cualquiera puede revisar la lluvia y el umbral y llegar al mismo resultado.
-- **El modelo** (LightGBM): aprende de los años anteriores qué combinación de clima del verano (lluvia, meses secos seguidos, temperatura máxima e índice de sequía de Palmer) anticipa una pérdida, y devuelve una probabilidad. Un segundo modelo estima cuánto se pierde cuando hay pérdida.
+- **El modelo:** aprende de los años anteriores qué combinación de clima del verano (lluvia, meses secos seguidos, temperatura máxima e índice de sequía de Palmer, medidos frente a lo normal) anticipa una pérdida, y devuelve una probabilidad. El primero fue un LightGBM; el **modelo final** es una logística con curvas suaves (splines), elegida entre cinco modelos (sección 8).
 
 Las dos se **evalúan** contra lo que pasó de verdad: ¿en los condados y años en que se perdió la cosecha, habrían pagado?
 
@@ -29,7 +29,7 @@ Las dos se **evalúan** contra lo que pasó de verdad: ¿en los condados y años
 | **Tendencia** | Recta (regresión lineal) del rendimiento contra el año, por condado, con 10 o más años válidos. Representa el rendimiento **esperado** de cada año, porque la tecnología sube los rendimientos con el tiempo. En la evaluación año por año se ajusta solo con años anteriores. | `comun.py`: `tendencia()` y `tendencia_ciclos()` |
 | **Pérdida** | Un condado-año **es pérdida** si el rendimiento es de **80 % o menos del esperado** por la tendencia. Ejemplo: si se esperaban 10 t/ha y salieron 7,8 t/ha (78 %), es pérdida. | `comun.py`: `UMBRAL_PERDIDA = 0.8` |
 | **Regla de lluvia** | Paga si la lluvia de junio a agosto queda bajo el percentil 15 de los años anteriores del condado. | `29_modelos_eeuu.py` y `35_prueba_ciegas.py` |
-| **Modelos** | Regresión logística, bosque aleatorio y LightGBM, con rejillas fijas de hiperparámetros. Se eligió LightGBM por su AUC en validación. | `comun.py`: `crear()` y `REJILLAS`; `29_modelos_eeuu.py` |
+| **Modelos** | Primero: regresión logística, bosque aleatorio y LightGBM (se eligió LightGBM). Después: cinco modelos con y sin grados-día, probados a ciegas; ganó la logística con splines (sección 8). | `29_modelos_eeuu.py`, `47_cinco_modelos.py` y `50_comparacion_final.py` |
 | **Calibración** | Regresión isotónica con los 3 años anteriores al que se predice, para que "30 %" signifique cerca de 3 de cada 10. | `29_modelos_eeuu.py` |
 | **Pago del modelo** | Paga en los condado-años con mayor probabilidad, tantos como paga la regla. | `comun.py`: `pagar_igual_que_regla()` |
 | **Contrato Palmer** | Paga si el Palmer de julio y agosto queda bajo el percentil 15 de los años anteriores del condado: 0 % en el percentil 15 y 100 % en el percentil 2, en línea recta. | `37_palmer_ciegas.py` y `42_palmer_topes.py` |
@@ -193,7 +193,32 @@ Plan: `docs/plan_cierre.md`; resultados: `docs/resultados_cierre.md`.
 
 ---
 
-## 8. Lo que NO afirmamos
+## 8. Cinco modelos y el modelo final
+
+Detalle: `docs/bitacora.md` (partes cuarta a décima) y la sección 8 del cuaderno final.
+
+**Los cinco modelos:**
+| Modelo | Qué hace, en palabras simples |
+|---|---|
+| Regresión logística | Suma ponderada de las variables, convertida en probabilidad |
+| Logística con splines (**el elegido**) | Igual, pero cada variable entra como una curva suave, así puede capturar que el riesgo sube rápido con mucho calor o con exceso de agua |
+| Bosque aleatorio | Promedio de cientos de árboles de decisión |
+| Boosting de gradiente | Árboles en secuencia, cada uno corrige al anterior (como LightGBM) |
+| Boosting monótono | Boosting obligado a que más calor o más sequía nunca bajen el riesgo |
+
+**Conjuntos de variables:** A = clima del verano medido frente a lo normal del condado (lluvia de mayo a septiembre, meses secos seguidos, déficit de julio y agosto, temperatura máxima y Palmer de junio a agosto); B = A más grados-día de calor diario en valor absoluto. Sin ubicación, porque en estados nuevos queda fuera de rango.
+
+**Grados-día:** con la temperatura máxima y mínima de cada día se dibuja una curva seno y se mide cuánto pasa por encima de un umbral. Los grados-día por encima de 29 °C miden el calor que daña al maíz (Schlenker y Roberts, 2009).
+
+**Cómo se eligió:** entrenando solo con Iowa, Illinois e Indiana y prediciendo año por año los siete estados nuevos. Se escogió con 1991-2010 (puntaje = promedio del AUC global y del AUC dentro de cada año); 2011-2025 solo confirma. El criterio se fijó antes de correr.
+
+**Calibración:** la isotónica con los 3 años más recientes empeoraba las probabilidades cuando esos años tenían pocas pérdidas; el modelo final se usa sin calibrar.
+
+**Comparación justa en dólares:** todos los disparadores pagan en la misma cantidad de condado-años y con el mismo monto (tamaño medio de las pérdidas de años anteriores); solo cambia a quién se paga.
+
+---
+
+## 9. Lo que NO afirmamos
 
 - **No** decimos que el semáforo funcione: ninguno de los dos cumplió el criterio.
 - **No** decimos que el modelo sirva en cualquier estado: en Minnesota no distingue mejor que el azar y en Wisconsin pierde contra la regla.
@@ -202,6 +227,6 @@ Plan: `docs/plan_cierre.md`; resultados: `docs/resultados_cierre.md`.
 - **No** decimos que el índice reemplace al seguro real: este cubre más riesgos (precio, exceso de lluvia) y paga por finca. El costo de operar el índice es un supuesto.
 - **No** decimos que el modelo "predice la cosecha": se evalúa con el clima de todo el verano, a fines de septiembre.
 - **No** decimos que el índice dirija la plata igual o mejor que el seguro real: no se midieron con la misma vara.
-- **No** decimos que LightGBM sea el mejor modelo posible: el bosque aleatorio y la regresión logística quedaron muy cerca.
+- **No** decimos que el aprendizaje automático sea mucho mejor que un índice simple de calor: la ventaja es pequeña y, en dólares, desaparece.
 
 **Pruebas automáticas:** `tests/` comprueba que las funciones clave hacen lo que dicen, por ejemplo que el Heidke dé 0,375 en el ejemplo de la sección 4.2.

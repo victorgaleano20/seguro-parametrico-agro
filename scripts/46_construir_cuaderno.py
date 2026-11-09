@@ -1,6 +1,6 @@
 """
 46_construir_cuaderno.py
-Parte B del cierre: arma notebooks/proyecto_final.ipynb, el proyecto contado de principio a fin en 13 secciones.
+Parte B del cierre: arma notebooks/proyecto_final.ipynb, el proyecto contado de principio a fin en 14 secciones.
 El cuaderno SOLO lee las tablas de datos/procesados y las figuras de docs/figuras: no entrena ni recalcula ningún modelo, y
 todas las cifras del texto salen de las tablas (así el texto no puede contradecirlas).
 
@@ -32,7 +32,7 @@ def codigo(texto):
 md("""
 # Seguro de sequía para el maíz de Estados Unidos: el proyecto de principio a fin
 
-Este cuaderno cuenta todo el proyecto en 13 pasos, en lenguaje sencillo. Está pensado para alguien que no sabe de seguros ni de datos.
+Este cuaderno cuenta todo el proyecto en 14 pasos, en lenguaje sencillo. Está pensado para alguien que no sabe de seguros ni de datos.
 No entrena ningún modelo: solo lee las tablas y las figuras que ya se calcularon, para que el texto y las cifras no se contradigan.
 Cada parte termina con una frase de **qué significa**.
 """)
@@ -129,6 +129,7 @@ Todos son públicos y gratuitos.
 | **RMA (USDA)** | Lo que de verdad pagó el seguro de cosechas de EE. UU., por condado, cultivo, causa y año; primas y subsidios | Desde 1989 |
 | **ERS (USDA) y BLS** | Precio del maíz y el índice de precios para llevar todo a dólares de 2025 | 1981 a 2025 |
 | **EVA (UPRA y MinAgricultura)** | Rendimientos municipales de maíz y café en Colombia (para el contraste de la sección 5) | 2007 a 2025 |
+| **NOAA nClimGrid-Daily** | Temperatura máxima y mínima diarias por condado, para los grados-día de calor | 1981 a 2025 |
 | **ONI (NOAA)** | Fases de El Niño y La Niña | Desde 1981 |
 
 **Cómo se define una pérdida:** el rendimiento del condado en ese año fue **80 % o menos de lo esperado**. Lo esperado sale de la tendencia lineal del propio condado, usando solo años anteriores, para no mirar el futuro.
@@ -146,20 +147,24 @@ md(f"**En números:** la prueba principal tiene {miles(len(pred))} condado-años
 
 # ------------------------------------------------------------------------------------------------ 4. exploración
 md("""
-## 4. La exploración
+## 4. La exploración de los datos
 
-Antes de modelar se miró qué pasa con la cosecha cuando el verano es seco.
+El análisis exploratorio completo está en `notebooks/eda.ipynb` (versión sin código: `docs/eda.html`). Lo esencial:
+
+| Hallazgo | Qué implica |
+|---|---|
+| Datos limpios: menos de 1 % de cifras repetidas y sin faltantes (en Kansas solo entra el 52 % de los condado-años por saltos de área) | Se puede confiar en el dato de cosecha |
+| 10,6 % de los condado-años son pérdida, y los 5 peores años reúnen el 57 % de las pérdidas | No sirve medir con exactitud; la muestra efectiva es de pocos años malos |
+| El año explica el 27 % de la variación de la pérdida, el estado y año el 45 % y el condado solo el 3 % | Hay que validar por años completos y medir el acierto **dentro de cada año** |
+| Lluvia, temperatura y Palmer medidos frente a lo normal del condado se comportan igual en los estados de entrenamiento y en los de prueba; la ubicación y los grados-día absolutos no | Usar clima frente a lo normal y dejar fuera la ubicación |
+| El calor y la sequía juntos multiplican el riesgo (47 % de pérdidas con ambos muy altos); el exceso de agua también lo sube | Preferir modelos no lineales |
 """)
 codigo('''
 figura("pitch_eeuu_probabilidad_lluvia.png")
 figura("pitch_serie_tiempo_eeuu.png")
 ''')
 md("""
-- En Iowa, Illinois e Indiana, los veranos secos tienen mucha más probabilidad de pérdida (35 %) que los normales (6 %) o los lluviosos (11 %).
-- Dos años destacan: **1988 y 2012**, grandes sequías. Por eso casi todos los resultados se muestran también sin ellos.
-- La inundación de **1993** es el caso contrario: demasiada agua, y el modelo de sequía no la ve.
-
-**Qué significa:** en EE. UU. la sequía sí deja huella en el dato de cosecha; hay algo que predecir.
+**Qué significa:** en EE. UU. la sequía y el calor sí dejan huella en el dato de cosecha; hay algo que predecir, pero de pocos años malos y con efectos regionales fuertes.
 """)
 
 # ------------------------------------------------------------------------------------------------ 5. Colombia y EE. UU.
@@ -196,7 +201,7 @@ md("""
 
 # ------------------------------------------------------------------------------------------------ 6. modelo
 md("""
-## 6. El modelo
+## 6. El primer modelo: LightGBM en tres estados
 
 **Qué hace:** para cada condado y cada año estima la probabilidad de pérdida, con el clima del verano (lluvia, meses secos seguidos, temperatura máxima e índice de Palmer) y la ubicación. Usa LightGBM, un modelo de árboles de decisión. También estima cuánto se pierde cuando hay pérdida.
 
@@ -221,12 +226,12 @@ figura("pitch_eeuu_variables.png", 760)
 md("""
 **Lo que más pesa:** el calor de julio y agosto y la lluvia de julio, que es cuando el maíz florece.
 
-**Qué significa:** el modelo ordena los años de pérdida mucho mejor que el azar y mejor que una regla simple de lluvia. Pero esto se midió donde el modelo se entrenó; falta ver si se traslada a otros estados.
+**Qué significa:** el modelo ordena los años de pérdida mucho mejor que el azar y mejor que una regla simple de lluvia. Pero esto se midió donde el modelo se entrenó; falta ver si se traslada a otros estados. Este primer modelo se reemplazó después por el que sale de comparar cinco modelos (sección 8).
 """)
 
 # ------------------------------------------------------------------------------------------------ 7. prueba a ciegas
 md("""
-## 7. La prueba a ciegas en siete estados
+## 7. La primera prueba a ciegas en siete estados
 
 **Cómo se hizo:** el plan se escribió y se subió a git **antes** de bajar los datos de siete estados nuevos: Nebraska, Minnesota, Ohio, Missouri, Kansas, South Dakota y Wisconsin. El modelo, entrenado solo con Iowa, Illinois e Indiana, predijo esos siete estados año por año. Los estados nuevos nunca se usaron para entrenar, escoger ajustes ni calibrar.
 
@@ -265,14 +270,66 @@ mostrar(e)
 figura("pitch_ciegas_por_estado.png", 760)
 ''')
 md("""
-**Lo que falló:** no gana en todos los estados. En Minnesota no distingue mejor que el azar, y en Wisconsin pierde contra la regla. Además, sin calibrar con datos locales, sus probabilidades no mejoran la tasa media (eso se revisó en la sección siguiente).
+**Lo que falló:** no gana en todos los estados. En Minnesota no distingue mejor que el azar, y en Wisconsin pierde contra la regla. Además, sin calibrar con datos locales, sus probabilidades no mejoraban la tasa media (se revisó en las secciones 8 y 9).
 
 **Qué significa:** lo aprendido en tres estados se traslada a otros del cinturón maicero con algo menos de fuerza y le gana a la regla de lluvia, pero no es una garantía para cualquier estado.
 """)
 
+# ------------------------------------------------------------------------------------------------ 8. cinco modelos
+md("""
+## 8. Cinco modelos y el modelo final
+
+**Por qué:** la auditoría técnica mostró que no estaba demostrado que LightGBM fuera el mejor y que un índice simple de calor casi lo igualaba. Se compararon cinco modelos con un plan fijado **antes** de correr (`docs/bitacora.md`, sexta parte):
+- **Modelos:** regresión logística, logística con curvas suaves (splines), bosque aleatorio, boosting de gradiente y boosting monótono.
+- **Variables:** dos conjuntos, sin ubicación: clima mensual frente a lo normal (A), y A más grados-día de calor diario (B).
+- **Esquema:** todos se entrenan solo con Iowa, Illinois e Indiana y se prueban a ciegas, año por año, en los siete estados nuevos.
+- **Elección:** con los años 1991-2010; los años 2011-2025 solo confirman. Puntaje = promedio del acierto global y del acierto dentro de cada año.
+- **Referencias:** azar, regla de lluvia, índice simple de calor de julio y agosto y grados-día por encima de 29 °C.
+""")
+codigo('''
+f = leer("final_resultados.csv")
+el = leer_json("final_eleccion.json")
+t = f[f["periodo"] == "todo 1991-2025"].copy()
+t["Modelo"] = t["modelo"]
+t["Acierto (0,5 = azar)"] = [f"{c(a, 3)} ({c(l, 2)} a {c(h, 2)})" for a, l, h in zip(t["auc"], t["auc_ic_inf"], t["auc_ic_sup"])]
+t["Sin 2012"] = t["auc_sin_2012"].map(lambda x: c(x, 3))
+t["Dentro de cada año"] = t["auc_dentro_anio"].map(lambda x: c(x, 3))
+t["Heidke"] = t["heidke"].map(lambda x: c(x, 3))
+s = f[f["periodo"] == "seleccion 1991-2010"].set_index("clave")["puntaje_eleccion"]
+t["Puntaje de elección (1991-2010)"] = t["clave"].map(s).map(lambda x: c(x, 3))
+md("**Siete estados nuevos, a ciegas, 1991-2025:**")
+mostrar(t.sort_values("auc", ascending=False)[["Modelo", "Acierto (0,5 = azar)", "Sin 2012", "Dentro de cada año", "Heidke", "Puntaje de elección (1991-2010)"]])
+md(f"**Elegido con el criterio fijado: {el['nombre']}.** En la confirmación 2011-2025 su acierto es {c(el['auc_confirmacion'], 3)}, frente a "
+   f"{c(el['mejor_indice_simple_confirmacion'], 3)} del mejor índice simple (ventaja {c(el['ventaja_sobre_indice_simple'], 3)}; se pedía más de 0,02).")
+''')
+codigo('''
+pe = leer("final_por_estado.csv")
+ver = pe[pe["clave"].isin([el["elegido"], "ref_calor", "ref_regla"])].pivot(index="estado", columns="modelo", values="auc")
+md("**Por estado (acierto al ordenar, 1991-2025):**")
+mostrar(ver.map(lambda x: c(x, 3)).reset_index(names="Estado"))
+ruta_c = PROC / "exploratorio_c_resultados.csv"
+if ruta_c.exists():
+    x = leer("exploratorio_c_resultados.csv")
+    x = x[x["periodo"] == "todo 1991-2025"]
+    x["Acierto"] = x["auc"].map(lambda v: c(v, 3)); x["Dentro de cada año"] = x["auc_dentro_anio"].map(lambda v: c(v, 3))
+    md("**Exploratorio (no cambia la elección):** grados-día medidos frente a lo normal de cada condado. La idea salió de mirar los estados de prueba en el EDA, así que no es una prueba a ciegas limpia.")
+    mostrar(x[["modelo", "Acierto", "Dentro de cada año"]].rename(columns={"modelo": "Modelo"}))
+''')
+md("""
+**Lo que dicen los resultados:**
+- **El modelo más simple de los que aprenden fue el mejor:** curvas suaves sobre el clima frente a lo normal, sin ubicación. Supera al LightGBM original de la primera prueba a ciegas (0,739, que usaba la ubicación) y es el mejor o casi el mejor en todos los estados; en Wisconsin ahora le gana a la regla. Minnesota sigue débil.
+- **La ventaja sobre un índice simple de calor es real pero pequeña:** en confirmación pasa el umbral fijado por muy poco, y **dentro de cada año, en 2011-2025, el índice de calor queda por encima**. Los árboles (bosque, boosting) y los grados-día absolutos no ayudaron en el periodo de elección, aunque en 2011-2025 salieron algo mejor: el orden entre modelos depende del periodo y los rangos de confianza se superponen.
+- **Lo más prometedor quedó como exploratorio:** con grados-día medidos frente a lo normal de cada condado, el acierto dentro de cada año sube de 0,700 a 0,721 (y en 2011-2025, de 0,747 a 0,800, por encima del índice de calor). No cambia el modelo final porque la idea salió de mirar los estados de prueba; es lo primero que habría que confirmar con datos nuevos.
+- **Probabilidades:** la calibración con los tres años más recientes las **empeoraba** (Brier 0,0935 frente a 0,0864 sin calibrar; tasa media 0,0919), porque esos años a veces casi no tienen pérdidas. El modelo final se usa sin calibrar: así es mejor que la tasa media incluso en estados que nunca vio, aunque exagera en el décimo de más riesgo (dice 60 %, ocurrió 38 %).
+
+**El modelo final** se reentrenó con los diez estados (1981-2025) y está en `modelos/modelo_final.joblib`; se usa con `python scripts/48_predecir.py archivo.csv`.
+
+**Qué significa:** un modelo sencillo de curvas suaves sobre el clima del verano es la mejor opción entre las probadas para ordenar el riesgo en estados nuevos. Su ventaja sobre un índice simple de calor es pequeña: para un contrato, el índice simple sigue siendo una alternativa casi igual de buena y mucho más fácil de explicar.
+""")
+
 # ------------------------------------------------------------------------------------------------ 8. cierre
 md("""
-## 8. Los resultados del cierre: clima o geografía, años locales, Palmer con topes y Minnesota
+## 9. Los resultados del cierre: clima o geografía, años locales, Palmer con topes y Minnesota
 
 La prueba a ciegas dejó cuatro preguntas abiertas. Se resolvieron con un plan escrito y subido a git antes de correr nada (`docs/plan_cierre.md`). Nada de esto cambia el modelo principal ni sus resultados.
 
@@ -320,7 +377,7 @@ md("**Conclusión:** " + (f"el menor número de años que cumple la meta es **{c
 figura("pitch_cierre_calibracion_anios_locales.png")
 ''')
 md("""
-**Qué significa:** para usar las probabilidades en un estado nuevo hay que tener historia local propia; con pocos años recalibrar empeora las cosas. El orden entre condados (acierto al ordenar) no depende de esto.
+**Qué significa:** con el LightGBM original y su calibración, para usar las probabilidades en un estado nuevo hacía falta historia local propia; con pocos años, recalibrar empeora las cosas. El orden entre condados (acierto al ordenar) no depende de esto. **Matiz posterior (sección 8):** el modelo final, sin calibrar, ya es mejor que la tasa media en los estados nuevos, aunque exagera en los condado-años de más riesgo.
 
 ### 9.3 Contrato con el índice de Palmer, con topes
 
@@ -373,7 +430,7 @@ md("""
 
 # ------------------------------------------------------------------------------------------------ 9. semáforos
 md("""
-## 9. Los semáforos
+## 10. Los semáforos
 
 **Idea:** pintar cada condado de verde, amarillo o rojo para decir dónde un seguro por índice tiene más sentido.
 
@@ -405,42 +462,39 @@ md("""
 
 # ------------------------------------------------------------------------------------------------ 10. dólares
 md("""
-## 10. El impacto en dólares
+## 11. El impacto en dólares
 
-Todo en **dólares de 2025**, diez estados, de 1991 a 2025. La pérdida real de cosecha de esos años y estados es la base de comparación. Supuestos: suma asegurada de 100 % del valor esperado, área asegurada igual al área cosechada, y precio nacional de cada campaña.
+Todo en **dólares de 2025**, de 1991 a 2025. Supuestos: área asegurada igual al área cosechada y precio nacional de cada campaña.
+
+**Cómo se compara, en igualdad:** cada disparador (modelo final, índice de calor y regla de lluvia) paga en la misma cantidad de condado-años, y el monto es el valor esperado de la cosecha por el **tamaño medio de las pérdidas de los años anteriores**. Así solo cambia **a quién** se le paga. (El modelo del tamaño de la pérdida del proyecto original casi no aportaba y ya no se usa.)
 
 **La medida "de cada $100, a quien perdió"** cuenta los dólares que el índice paga en condado-años donde el rendimiento del condado cayó al 80 % o menos de lo esperado.
 """)
 codigo('''
-s = leer("ciegas_impacto_simulacion.csv")
-s = s[(s["periodo"] == "1991-2025") & (s["grupo"] == "diez estados") & (s["suma_asegurada"].isna() | (s["suma_asegurada"] == 1.0))].copy()
-real = s[s["disparador"].str.startswith("Seguro real")]
-s = s[~s["disparador"].str.startswith("Seguro real")].copy()
-s["Esquema"] = s["disparador"]
-s["Pagos"] = s["pagos_usd"].map(mm)
-s["Pérdida cubierta"] = s["pct_perdida_cubierta"].map(lambda v: "" if pd.isna(v) else c(v, 0) + " %")
-s["De cada $100, a quien perdió"] = s["de_cada_100_pagados"].map(lambda v: "$" + c(v, 0))
-perdida = s["perdida_real_usd"].iloc[0]
-md(f"**Pérdida real de cosecha, 1991 a 2025, diez estados: {mm(perdida)}.**")
-mostrar(s[["Esquema", "Pagos", "Pérdida cubierta", "De cada $100, a quien perdió"]])
-azar = s["de_cada_100_al_azar"].dropna().iloc[0]
-md(f"Pagando al azar, llegarían ${c(azar, 0)} de cada $100 a quien perdió. "
-   f"Como referencia, el seguro real de la RMA pagó {mm(real['pagos_usd'].iloc[0])} en esos años y estados, por todas las causas.")
-figura("pitch_ciegas_dolares.png", 760)
+dd = leer("modelo_final_dolares.csv")
+dd["Pagos"] = dd["pagos_usd"].map(lambda v: "" if pd.isna(v) else mm(v))
+dd["Pérdida cubierta"] = dd["pct_perdida_cubierta"].map(lambda v: "" if pd.isna(v) else c(v, 0) + " %")
+dd["De cada $100, a quien perdió"] = dd["de_cada_100"].map(lambda v: "$" + c(v, 1))
+for grupo in ["diez estados", "siete estados nuevos (a ciegas)"]:
+    g = dd[(dd["grupo"] == grupo) & (dd["periodo"] == "1991-2025")]
+    md(f"**{grupo.capitalize()}, 1991-2025. Pérdida real: {mm(g['perdida_real_usd'].iloc[0])}.**")
+    mostrar(g.rename(columns={"disparador": "Disparador"})[["Disparador", "Pagos", "Pérdida cubierta", "De cada $100, a quien perdió"]])
+s = dd[(dd["grupo"] == "diez estados") & (dd["periodo"] == "1991-2025 sin 2012")]
+md("**Diez estados, sin 2012:** " + "; ".join(f"{r.disparador}: ${c(r.de_cada_100, 1)}" for r in s.itertuples()) + ".")
 ''')
 md("""
-Lo que se puede leer de esta tabla:
-- Con el modelo, de cada $100 que pagaría el índice, unos $34 llegan a condados que perdieron: mucho más que pagando al azar, pero **unos $66 van a condados sin pérdida**. El riesgo de base baja, no desaparece.
-- El contrato Palmer manda un poco más, pero paga más del doble de dólares.
+Lo que se puede leer de estas tablas:
+- El modelo final y el índice de calor dirigen la plata **casi igual de bien** (unos $32 de cada $100 en los diez estados); el modelo cubre algo más de la pérdida real y gana sin 2012, y en los estados a ciegas el índice de calor manda un poco más a quien perdió. Los dos superan con claridad a la regla de lluvia y al azar.
+- Aun así, **unos $2 de cada $3** irían a condados sin pérdida: el riesgo de base baja, no desaparece.
 
-**Por qué no se compara con el seguro real.** Medir al seguro real con esta vara no es justo: está hecho para pagar a la finca que pierde aunque el promedio de su condado esté bien, y también paga caídas de precio, exceso de lluvia y granizo. Para él esos pagos no son errores. Por eso no se dice que el índice dirija la plata "igual" ni "mejor" que el seguro real. El costo de operar el índice tampoco se compara: sería un supuesto.
+**Por qué no se compara con el seguro real.** Medir al seguro real con esta vara no es justo: está hecho para pagar a la finca que pierde aunque el promedio de su condado esté bien, y también paga caídas de precio, exceso de lluvia y granizo. Por eso no se dice que el índice dirija la plata "igual" ni "mejor" que el seguro real. El costo de operar el índice tampoco se compara: sería un supuesto.
 
-**Qué significa:** el índice con el modelo dirige la plata mucho mejor que el azar, pero de cada $3 que pagaría, unos $2 irían a condados sin pérdida.
+**Qué significa:** en dólares, el aprendizaje automático no supera a un índice simple de calor; ambos son mucho mejores que una regla de lluvia, pero dejan un riesgo de base grande.
 """)
 
 # ------------------------------------------------------------------------------------------------ 11. auditoría
 md("""
-## 11. Lo que encontró la auditoría (2026-11-08)
+## 12. Lo que encontró la auditoría (2026-11-08)
 
 Después de terminar, se revisó el proyecto buscando sus puntos débiles. Esto es descriptivo y se calculó después de ver los resultados: no cambia ninguna decisión, pero sí cómo se deben leer.
 
@@ -467,18 +521,24 @@ El modelo sí distingue condados dentro de un mismo año mejor que la regla de l
 
 **2. En EE. UU. ya existe un seguro que paga por la pérdida del condado.** El seguro por rendimiento del área (RMA) paga cuando cae el rendimiento del condado, que es justo lo que el modelo intenta anticipar. Un índice de clima solo le agrega rapidez (el clima se conoce en septiembre; el rendimiento del condado, meses después). Por eso el valor de este trabajo está en el método y en lo que le falta a Colombia, no en un seguro nuevo para EE. UU.
 
-**3. La comparación con el seguro real no es válida** (sección 10) y se retiró.
+**3. La comparación con el seguro real no es válida** (sección 11) y se retiró.
 
-**4. LightGBM no es claramente el mejor modelo.** Se eligió con la regla fijada de antemano (mejor acierto en validación), pero año por año el bosque aleatorio quedó apenas arriba y los rangos de los tres modelos se superponen; en la prueba 2019-2025 ganó la regresión logística. Para un contrato real convendría un modelo más simple y fácil de auditar.
+**4. LightGBM no era claramente el mejor modelo.** Por eso se compararon cinco modelos con un plan fijado de antemano (sección 8): ganó una logística con curvas suaves, más simple y fácil de auditar.
 
-**5. Lo que recomienda la literatura y aquí falta:** contar las horas de calor por encima de 29 °C en lugar del promedio de la temperatura máxima (Schlenker y Roberts, 2009), y usar vegetación o humedad del suelo vistas desde satélite.
+**6. Casi toda la señal es el calor.** En los tres estados originales, un índice simple de calor de julio y agosto, sin entrenar, logra 0,780 de acierto frente a 0,816 de LightGBM. El aprendizaje automático agrega poco; la comparación justa es contra ese índice, no contra la regla de lluvia (que dentro de cada año no distingue condados: 0,48).
+
+**7. El modelo del tamaño de la pérdida casi no aportaba** (correlación 0,24 con el faltante real; error 0,099 frente a 0,105 de usar el promedio). Los dólares se recalcularon con el tamaño medio de las pérdidas de los años anteriores (sección 11).
+
+**8. La calibración con tres años empeoraba las probabilidades** (sección 8): sin ella, el modelo final es mejor que la tasa media incluso en estados que nunca vio. Esto matiza la conclusión de la sección 9 sobre los "15 años locales", que se midió con esa calibración.
+
+**5. Lo que recomienda la literatura:** contar las horas de calor por encima de 29 °C (Schlenker y Roberts, 2009). Se descargó la temperatura diaria de NOAA y se probó (sección 8): en valor absoluto no se traslada a los estados nuevos, que toleran más calor; medidos frente a lo normal de cada condado sí ayudan (exploratorio). Falta probar vegetación o humedad del suelo vistas desde satélite.
 
 **Qué significa:** el método está bien hecho y es honesto, pero el resultado se debe contar como lo que es: un índice de clima que ordena el riesgo mejor que una regla de lluvia, con mucho riesgo de base y sin poder ponerle precio todavía en una zona nueva.
 """)
 
 # ------------------------------------------------------------------------------------------------ 12. Colombia
 md("""
-## 12. Lo que esto significa para Colombia: requisitos de datos y 3 recomendaciones
+## 13. Lo que esto significa para Colombia: requisitos de datos y 3 recomendaciones
 
 | Lo que se necesita | EE. UU. (maíz, 10 estados) | Colombia (maíz y café, EVA) |
 |---|---|---|
@@ -499,12 +559,13 @@ md("""
 
 # ------------------------------------------------------------------------------------------------ 13. límites
 md("""
-## 13. Las limitaciones y lo que no se puede decir
+## 14. Las limitaciones y lo que no se puede decir
 
 **Se puede decir:**
 - Un modelo entrenado en tres estados distingue años y condados con pérdida en otros siete mejor que una regla de lluvia, también sin 2012 y sin los condados con mucho riego. Dentro de un mismo año, la ventaja es modesta.
-- Para usar sus probabilidades en un estado nuevo se necesitan años locales propios.
-- Con el modelo, de cada $100 que pagaría el índice, unos $34 llegan a condados con pérdida, frente a unos $10 pagando al azar.
+- Las probabilidades del modelo final, sin calibrar, son mejores que la tasa media incluso en estados nuevos, pero exageran en el riesgo más alto; para poner precio conviene ajustarlas con datos locales.
+- Un modelo sencillo de curvas suaves sobre el clima frente a lo normal, entrenado en tres estados, ordena el riesgo en otros siete mejor que una regla de lluvia (0,762 frente a 0,659) y algo mejor que un índice simple de calor (0,710).
+- De cada $100 que pagaría el índice, unos $32 llegan a condados con pérdida, frente a unos $8 pagando al azar; el índice de calor logra casi lo mismo.
 - Un contrato simple con el índice de Palmer se comporta como la regla de lluvia.
 
 **No se puede decir:**
@@ -514,7 +575,7 @@ md("""
 - Que las causas por estado expliquen por qué falla el modelo en Minnesota: es una coincidencia que los datos muestran, no una causa demostrada.
 - Que el índice dirija la plata igual o mejor que el seguro real: no se midieron con la misma vara.
 - Que el índice reemplace al seguro real: cubre más riesgos y paga por finca.
-- Que LightGBM sea el mejor modelo posible: los tres modelos probados quedaron muy cerca.
+- Que el aprendizaje automático sea mucho mejor que un índice simple de calor: la ventaja es pequeña y, en dólares, desaparece.
 - Que el modelo funcione en Colombia: allá no hay datos para comprobarlo.
 
 **Limitaciones que siguen abiertas:**
@@ -524,7 +585,7 @@ md("""
 - Falta la soya y las causas distintas de la sequía (exceso de lluvia, inundaciones).
 - El modelo se evalúa con el clima de todo el verano, a fines de septiembre: no es un pronóstico a mitad de temporada.
 - Sin datos de riego como variable del modelo (solo como filtro de evaluación).
-- El calor se mide con el promedio de la temperatura máxima, no con las horas por encima de 29 °C.
+- Los grados-día por encima de 29 °C se probaron en valor absoluto; medidos frente a lo normal solo se probaron de forma exploratoria.
 - El rendimiento se calcula sobre el área cosechada: en sequías fuertes, los lotes abandonados pueden esconder parte de la pérdida.
 - Los intervalos por remuestreo de años dependen de pocos años (20 a 35).
 

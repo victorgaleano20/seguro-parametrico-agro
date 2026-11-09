@@ -7,7 +7,8 @@ Un seguro por índice paga solo, mirando un dato público (lluvia, calor), sin v
 **Por qué EE. UU.:** el proyecto empezó en Colombia, pero allá el dato de cosecha municipal no permite medir la pérdida y no hay pagos públicos de seguros para comprobar nada. EE. UU. sirve de laboratorio: tiene 45 años de rendimiento por condado y los pagos reales del seguro. Allá ya existe un seguro que paga por el rendimiento del condado, así que el índice de clima no es un producto nuevo para EE. UU.; lo que se mide es el método, y lo que se aprende es qué necesita Colombia (`docs/requisitos_datos.md`).
 
 Se entregan:
-- un modelo de aprendizaje automático (LightGBM) que estima la probabilidad y el tamaño de la pérdida de cosecha por condado;
+- un análisis exploratorio de los datos (`notebooks/eda.ipynb`);
+- una comparación de cinco modelos de aprendizaje automático y la elección del modelo final, que estima la probabilidad de pérdida de cosecha por condado (`modelos/modelo_final.joblib`);
 - una prueba a ciegas en siete estados que el modelo nunca vio;
 - un semáforo de condados (que no se sostuvo);
 - el impacto en dólares con datos reales (NASS, RMA, ERS y BLS);
@@ -17,27 +18,34 @@ Se entregan:
 
 ## Resultados principales
 
-| Pregunta | Resultado |
+**Modelo final:** logística con curvas suaves (splines) sobre el clima del verano medido frente a lo normal de cada condado (lluvia, meses secos, déficit, temperatura máxima e índice de Palmer), sin ubicación. Ganó una comparación de cinco modelos con criterio fijado antes de correr, entrenando solo con Iowa, Illinois e Indiana y probando a ciegas en siete estados.
+
+| Pregunta | Resultado (siete estados a ciegas, 1991-2025, salvo que se diga otra cosa) |
 |---|---|
-| ¿El modelo funciona en estados que nunca vio? | **Sí, con el criterio fijado de antemano:** AUC 0,74 frente a 0,66 de la regla de lluvia; Heidke 0,32 frente a 0,22; valor p 0,001. No funciona en Minnesota, y sus probabilidades no están calibradas en estados nuevos |
-| ¿Clima o geografía? | **Sobre todo clima:** sin ubicación el acierto pasa de 0,739 a 0,734 (la regla fijada era 0,02) |
-| ¿Cuántos años locales para entrar a un estado nuevo? | **15** (5 de 7 estados superan a la tasa media); con 3 o 5 años recalibrar empeora |
-| ¿A dónde va la plata? (diez estados, 1991-2025) | De cada $100 que pagaría el índice, llegan a condados que perdieron: modelo $34, contrato Palmer $38, azar $10. No se compara con el seguro real, que paga por finca y por otras causas |
-| ¿Cuánto es saber qué años son malos? (auditoría) | Mucho: el promedio del año solo da 0,723 frente a 0,739 del modelo. Dentro de cada año, el modelo 0,708 y la regla 0,650 |
-| ¿Contrato Palmer con topes vendible? | **No:** el tope arregla 2012, pero paga más de 1,5 veces la pérdida real en 18 a 23 de 35 años |
-| ¿Qué explica Minnesota? | La sequía pesa menos entre las causas de sus siniestros (26 % frente a 36-56 %); es una coincidencia, no una causa demostrada |
-| ¿Algún semáforo se sostiene? | **No** (ni el de calidad y sensibilidad ni el de causa): el margen de error incluye el cero |
+| ¿Predice en estados que nunca vio? | **Sí:** acierto al ordenar (AUC) 0,762 (rango 95 %: 0,64-0,85), sin 2012 0,738; azar 0,50 |
+| ¿Mejor que una regla de lluvia? | **Sí, con claridad:** la regla saca 0,659; dentro de cada año, 0,700 frente a 0,650 |
+| ¿Mejor que un índice simple de calor de julio y agosto? | **Poco:** el índice saca 0,710; en 2011-2025 la ventaja es 0,021 (se pedía más de 0,02) y dentro de cada año el índice queda por encima |
+| ¿Cuál de los 5 modelos? | El más simple de los que aprenden (splines) generalizó mejor que bosque, boosting, LightGBM y boosting monótono |
+| ¿Sus probabilidades sirven? | Sin calibrar, sí (Brier 0,086 frente a 0,092 de la tasa media), aunque exageran en el riesgo más alto. La calibración con 3 años las empeoraba |
+| ¿A dónde va la plata? (diez estados) | De cada $100 que pagaría el índice, llegan a condados con pérdida: modelo $31,7, índice de calor $32,4, regla $25,8, azar $8,4. **En dólares, el modelo no supera al índice de calor** |
+| ¿Grados-día de calor (> 29 °C)? | En valor absoluto no se trasladan a estados nuevos; frente a lo normal mejoran el acierto dentro del año (0,721), pero es exploratorio |
+| ¿Algún semáforo se sostiene? | **No** (el margen de error incluye el cero) |
+| ¿Contrato Palmer con topes vendible? | **No:** paga más de 1,5 veces la pérdida real en 18 a 23 de 35 años |
+
+**En una frase:** con buenos datos, un modelo sencillo de clima ordena el riesgo de pérdida mejor que una regla de lluvia en estados que nunca vio, pero apenas mejor que un índice simple de calor y con un riesgo de base grande (unos $2 de cada $3 irían a condados sin pérdida).
 
 ## Documentos
 
 | Documento | Qué contiene |
 |---|---|
 | `docs/resumen_final.md` | Resumen de una página |
+| `docs/eda.html` | Análisis exploratorio de los datos, sin código (cuaderno: `notebooks/eda.ipynb`) |
 | `docs/proyecto_final.html` | El proyecto de principio a fin, sin código |
 | `docs/requisitos_datos.md` | Qué necesita un seguro por índice: EE. UU. frente a Colombia, y 3 recomendaciones |
-| `docs/historia_del_proyecto.md` | Decisiones, razones y qué NO decir (sección 7: la auditoría) |
+| `docs/historia_del_proyecto.md` | Decisiones, razones y qué NO decir (secciones 7 y 8: auditoría y modelo final) |
 | `docs/metodologia.md` | El modelo y las métricas, explicados sin tecnicismos |
-| `docs/resultados_modelo_eeuu.md` | Modelos × métricas en los tres estados originales, aporte del clima, SHAP y semáforo |
+| `modelos/modelo_final.json` | El modelo final: variables, hiperparámetros, cómo se eligió y advertencias |
+| `docs/resultados_modelo_eeuu.md` | El primer modelo (LightGBM) en los tres estados originales, aporte del clima, SHAP y semáforo |
 | `docs/impacto_economico_eeuu.md` | Supuestos, pérdida real, lo que pagó la RMA y el seguro simulado |
 | `docs/plan_prueba_ciegas.md` y `docs/resultados_prueba_ciegas.md` | Prueba a ciegas en siete estados: plan congelado antes de ver los datos y resultados |
 | `docs/plan_cierre.md` y `docs/resultados_cierre.md` | Cierre: plan congelado y resultados |
@@ -49,7 +57,8 @@ Se entregan:
 |---|---|
 | `datos/crudos/` | Archivos tal como se descargaron, sin modificar (no están en el repositorio). Cada descarga queda anotada en `datos/crudos/registro_descargas.csv` (fuente, URL, archivo, fecha, tamaño). |
 | `datos/procesados/` | Tablas generadas por los scripts. Las de más de 10 MB no se suben al repositorio y se regeneran con los scripts. |
-| `notebooks/` | `proyecto_final.ipynb`: el proyecto de principio a fin. Solo lee tablas de `datos/procesados/` y figuras de `docs/figuras/`; no entrena modelos. |
+| `notebooks/` | `proyecto_final.ipynb`: el proyecto de principio a fin; `eda.ipynb`: el análisis exploratorio. Solo leen tablas de `datos/procesados/` y figuras de `docs/figuras/`; no entrenan modelos. |
+| `modelos/` | El modelo final (`modelo_final.joblib`) y su descripción (`modelo_final.json`). |
 | `scripts/` | Scripts de Python numerados, que se corren en orden. `comun.py` tiene las funciones que comparten. La numeración tiene saltos porque se conserva la del proyecto original. |
 | `docs/` | Documentos y figuras (`docs/figuras/`). |
 | `tests/` | Pruebas de las funciones clave (`python -m pytest tests`). |
@@ -122,7 +131,16 @@ python scripts/43_causas_siniestros.py  # causas de los siniestros por estado y 
 python scripts/44_semaforo_causa.py     # semáforo por causa de los siniestros
 python scripts/45_figuras_cierre.py     # figuras docs/figuras/pitch_cierre_*.png
 
-# 4. Cuaderno final: armarlo, ejecutarlo y exportar la versión sin código
+# 4. Comparación de modelos, modelo final y EDA (2026-11-08)
+python scripts/47_cinco_modelos.py      # 5 modelos en los tres estados originales (unos 20 minutos)
+python scripts/49_temperatura_diaria.py # temperatura diaria por condado (NOAA nClimGrid-Daily) y grados-día
+python scripts/50_comparacion_final.py  # 5 modelos x 2 conjuntos, a ciegas en siete estados; guarda el modelo final (unos 50 minutos)
+python scripts/52_grados_dia_anomalia.py # exploratorio: grados-día frente a lo normal
+python scripts/53_dolares_modelo_final.py # predicciones del modelo final para el simulador y dólares
+python scripts/48_predecir.py archivo.csv # predecir con el modelo final
+python scripts/51_construir_eda.py      # arma notebooks/eda.ipynb (luego nbconvert, como el cuaderno final)
+
+# 5. Cuaderno final: armarlo, ejecutarlo y exportar la versión sin código
 python scripts/46_construir_cuaderno.py
 python -m nbconvert --to notebook --execute --inplace notebooks/proyecto_final.ipynb
 python -m nbconvert --to html --no-input --output-dir docs --output proyecto_final notebooks/proyecto_final.ipynb
@@ -162,6 +180,7 @@ La fecha exacta de cada archivo está en `datos/crudos/registro_descargas.csv`.
 | `eeuu/condados/cb_2023_us_county_500k.zip` | US Census Bureau, límites cartográficos de condados 2023 (1:500k) | [cb_2023_us_county_500k.zip](https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip) | Polígonos con código FIPS (GEOID) | `01` |
 | `eeuu/calendario/planting-10-29-2010.txt` | USDA NASS, *Usual Planting and Harvesting Dates for U.S. Field Crops* (oct-2010) | [esmis.nal.usda.gov](https://esmis.nal.usda.gov/concern/publications/vm40xr56k) | Fechas de siembra y cosecha por estado | `01` |
 | `eeuu/chirps/chirps_mensual_eeuu_AAAA.nc` | CHIRPS v2.0 mensual (Climate Hazards Center, UCSB), recortado por la IRI Data Library | [IRI: UCSB CHIRPS v2p0 monthly](https://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.monthly/.global/precipitation/) | Recuadro lon −97 a −84, lat 36,5 a 44, desde 1981; mm/mes a 0,05° (~5 km) | `01` (los siete estados nuevos, `33`) |
+| `eeuu/nclimgrid_diario/{tmax,tmin}_AAAAMM.csv` | NOAA NCEI, nClimGrid-Daily: temperatura máxima y mínima diarias, promedio por condado (solo los diez estados) | [nclimgrid-daily/access/averages](https://www.ncei.noaa.gov/data/nclimgrid-daily/access/averages/) | Mayo a septiembre, 1981–2025. Ojo: el código de estado es el de NOAA, no el FIPS | `49` |
 | `eeuu/noaa/climdiv-{tmaxcy,pdsicy}-*` | NOAA NCEI, nClimDiv: temperatura máxima e índice de sequía de Palmer mensuales por condado | [climdiv/monthly/current](https://www.ncei.noaa.gov/monitoring-content/data/us/climdiv/monthly/current/) | Todos los condados, 1895–2026 | `27` |
 | `eeuu/precios/ers_feed_grains_yearbook.csv` | USDA ERS, Feed Grains Yearbook Tables (precio promedio recibido por los agricultores) | [feed-grains-yearbook-tables](https://www.ers.usda.gov/data-products/feed-grains-database/feed-grains-yearbook-tables) | Nacional, por campaña de septiembre a agosto | `27` |
 | `eeuu/precios/cpi_u_bls.csv` | BLS, CPI-U de todos los artículos (CUUR0000SA0), API pública v1 | [api.bls.gov](https://api.bls.gov/publicAPI/v1/timeseries/data/) | Mensual, 1981–2025 | `27` |
@@ -183,3 +202,8 @@ La fecha exacta de cada archivo está en `datos/crudos/registro_descargas.csv`.
 | `ciegas_palmer_*` | 37 | Contrato Palmer |
 | `ciegas_impacto_*` | 38 | Dólares en los diez estados y costo de operar |
 | `cierre_ubicacion_*`, `cierre_calibracion_*`, `cierre_palmer_topes_*`, `cierre_causas_*`, `cierre_semaforo_*` | 40 a 44 | Resultados del cierre |
+| `cinco_modelos_*` | 47 | Cinco modelos en los tres estados originales |
+| `eeuu_grados_dia.csv` | 49 | Grados-día de 10 a 29 °C y por encima de 29 °C, y días de 35 °C, por condado y año |
+| `final_*` | 50 | Comparación final a ciegas y elección del modelo |
+| `exploratorio_c_*` | 52 | Grados-día frente a lo normal (exploratorio) |
+| `modelo_final_predicciones.csv`, `modelo_final_dolares.csv`, `modelo_final_metricas.csv` | 53 | Predicciones del modelo final y dólares |

@@ -12,9 +12,18 @@
 - **La regla de lluvia es una comparación débil:** dentro de cada año, 0,480 (azar). Palmer, 0,534.
 - **El modelo del tamaño de la pérdida casi no aporta** (correlación 0,24; error 0,099 frente a 0,105 del promedio), y de él dependen los dólares que paga el índice.
 - **Muestra efectiva pequeña:** cinco años (2012, 1991, 1993, 1995 y 2002) concentran el 74 % de las pérdidas; los rangos de 95 % del AUC van de unos 0,5-0,6 a 0,9.
-- **Pendiente técnico:** repetir la comparación con el índice de calor en los siete estados nuevos (falta su base en este equipo); horas por encima de 29 °C (requiere temperatura diaria); pago ligado al índice en lugar del modelo de tamaño; efecto del abandono de lotes (falta área sembrada).
+- **Pendiente técnico de entonces:** resuelto el 2026-11-08 (ver "Modelo final" abajo), salvo el abandono de lotes (falta área sembrada).
 
-## Estado final (2026-11-05): proyecto terminado
+## Modelo final (2026-11-08): lo vigente
+- **Datos:** base de diez estados reconstruida con `34` (reproduce la original, diferencia máxima 5,7e-14) y temperatura diaria por condado de NOAA nClimGrid-Daily (`49`; ojo: NOAA no usa el FIPS de estado, se traduce por la sigla). EDA en `notebooks/eda.ipynb` / `docs/eda.html` (`51`).
+- **Modelo final: logística con splines sobre el clima frente a lo normal (conjunto A, sin ubicación ni grados-día), sin calibrar** (`modelos/modelo_final.joblib`, `modelos/modelo_final.json`; predecir con `48`). Elegido con criterio congelado entre 5 modelos × 2 conjuntos (`50`; bitácora, sexta parte).
+- **A ciegas, siete estados, 1991-2025:** AUC 0,762 (0,64-0,85), sin 2012 0,738, dentro del año 0,700; índice de calor 0,710 / 0,676 / 0,679; regla 0,659 / 0,620 / 0,650. Confirmación 2011-2025: ventaja de 0,021 sobre el índice de calor (umbral 0,02), pero dentro del año el índice gana (0,764 frente a 0,747). Minnesota 0,56.
+- **Calibración:** la isotónica de 3 años empeoraba (Brier 0,0935 frente a 0,0864 sin calibrar; tasa 0,0919). Por eso el modelo final va sin calibrar; exagera en el décimo de más riesgo (60 % frente a 38 %).
+- **Dólares (`53`, mismos pagos para todos los disparadores):** de cada $100, diez estados: modelo $31,7, calor $32,4, regla $25,8, azar $8,4. **En dólares el modelo no supera al índice de calor.** La cifra "$34" es del LightGBM anterior: no usarla.
+- **Exploratorio (`52`, no cambia el modelo):** grados-día frente a lo normal suben el AUC dentro del año a 0,721 (2011-2025: 0,800). Es la recomendación principal para seguir, con datos no mirados.
+- **Simulador:** usa el modelo final y agrega el índice de calor como disparador.
+
+## Estado final anterior (2026-11-05)
 **Seguro de sequía para el maíz de EE. UU.** (diez estados, 1991-2025). Entregables finales: `notebooks/proyecto_final.ipynb` (versión sin código: `docs/proyecto_final.html`), `docs/resumen_final.md` (una página), `docs/resultados_cierre.md`, `docs/resultados_prueba_ciegas.md` y el simulador `app.py` (listo para Streamlit Community Cloud; pasos en el README).
 
 **Relato vigente (desde el 2026-11-08):** EE. UU. es el laboratorio donde se mide el método; Colombia es donde hace falta. En Colombia el dato de cosecha no permite medir la pérdida (23,5 % de maíz repetido) y no hay pagos públicos de seguros; en EE. UU. sí, pero allá ya existe un seguro que paga por el rendimiento del condado (seguro por rendimiento del área de la RMA), así que el índice de clima no es un producto nuevo para EE. UU. Requisitos y 3 recomendaciones para Colombia: `docs/requisitos_datos.md`.
@@ -40,7 +49,7 @@
 - **Modelo congelado, entrenado solo con Iowa, Illinois e Indiana, aplicado año por año a Nebraska, Minnesota, Ohio, Missouri, Kansas, South Dakota y Wisconsin (506 condados, 1991–2025): PASA.** AUC 0,739 frente a 0,659 de la regla (+0,080), Heidke 0,318 frente a 0,218, valor p 0,001. Sin 2012: 0,709 frente a 0,620; sin condados con más de 25 % de riego: 0,769 frente a 0,677.
 - **No en todos los estados:** Minnesota 0,46 (azar); en Wisconsin el modelo pierde en AUC contra la regla. **Sus probabilidades no están calibradas allá** (Brier 0,094 frente a 0,092 de la tasa media); con la variante secundaria sí (0,084).
 - **Contrato Palmer (Palmer de julio y agosto bajo el percentil 15, pago proporcional hasta el percentil 2):** AUC 0,658 frente a 0,739 del modelo (diferencia 0,08 > 0,03): el modelo aporta algo más. Iguala a la regla de lluvia. En 2012 pagaría el triple de la pérdida real con suma de 100 %.
-- **Dólares de 2025, diez estados, 1991–2025:** pérdida real $46.341 millones; de cada $100 que pagaría el índice, llegan a condados que perdieron: modelo $34, Palmer $38, azar $10 (en los siete estados nuevos solos, modelo $26). Las cifras del seguro real ($34; costo $51–$74 por cada $100 que llegan) están en las tablas, pero **no se comparan** con el índice. No decir que el índice reemplaza al seguro real.
+- **Dólares de 2025, diez estados, 1991–2025 (con el LightGBM anterior; ver "Modelo final"):** pérdida real $46.341 millones; de cada $100 que pagaría el índice, llegan a condados que perdieron: modelo $34, Palmer $38, azar $10 (en los siete estados nuevos solos, modelo $26). Las cifras del seguro real ($34; costo $51–$74 por cada $100 que llegan) están en las tablas, pero **no se comparan** con el índice. No decir que el índice reemplaza al seguro real.
 
 **Modelo en los tres estados originales (detalle en `docs/resultados_modelo_eeuu.md` y `docs/impacto_economico_eeuu.md`):**
 - LightGBM, el mejor en validación, registrado en MLflow como `perdida_maiz_eeuu`, alias `mejor_en_validacion`.

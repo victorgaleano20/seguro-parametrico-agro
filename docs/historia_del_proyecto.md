@@ -1,6 +1,6 @@
 # Historia del proyecto: decisiones, razones y cómo contarlo
 
-> **Estado (2026-11-05, cierre):** el proyecto está terminado. Lo más reciente está en la **sección 7**; el resumen de una página, en `docs/resumen_final.md`.
+> **Estado (2026-11-05, cierre):** el proyecto está terminado. Lo más reciente está en la **sección 8**; el resumen de una página, en `docs/resumen_final.md`.
 
 Este documento resume por qué se tomó cada decisión del seguro de sequía para el maíz de EE. UU., no solo qué se hizo. El detalle técnico de cada sesión está en `docs/bitacora.md`. La metodología y las métricas están en `docs/metodologia.md`.
 
@@ -133,3 +133,23 @@ Este documento resume por qué se tomó cada decisión del seguro de sequía par
 - **No** decir que LightGBM es el mejor modelo posible.
 
 **Frase para la presentación:** *"En Colombia no pudimos saber si un seguro por índice protege, porque el dato de cosecha no es confiable. Por eso medimos el método donde sí se puede: el maíz de EE. UU. Un modelo de clima, probado a ciegas en siete estados, ordena el riesgo mejor que una regla de lluvia, pero de cada $100 que pagaría, $66 irían a condados sin pérdida, y sin unos 15 años de historia local no se le puede poner precio. Para Colombia, el primer paso no es un modelo: es un dato de cosecha confiable y pagos públicos."*
+
+## 8. EDA, cinco modelos y el modelo final (8 de noviembre de 2026)
+
+**Por qué:** la auditoría técnica mostró que un índice simple de calor casi igualaba al LightGBM, que no estaba demostrado que LightGBM fuera el mejor y que el modelo del tamaño de la pérdida casi no aportaba. Se pidió un trabajo de nivel de especialización: EDA completo y comparación rigurosa de modelos.
+
+**Qué se hizo** (detalle en `docs/bitacora.md`, partes cuarta a décima):
+- Se descargaron los datos de los diez estados y la **temperatura diaria por condado** (NOAA nClimGrid-Daily) para calcular grados-día de calor. En la primera descarga se filtraron mal los estados (NOAA no usa el código FIPS); se detectó antes de usar los datos y se corrigió.
+- **EDA** (`notebooks/eda.ipynb`): datos limpios; las pérdidas se concentran en pocos años y regiones (el condado explica el 3 % de la variación); el clima medido frente a lo normal se traslada entre estados y la ubicación no.
+- **Cinco modelos × dos conjuntos de variables**, entrenados con 3 estados y probados a ciegas en 7, con el criterio fijado antes de correr.
+- La calibración con 3 años **empeoraba** las probabilidades; el modelo final se usa sin calibrar.
+
+**Resultado:** el modelo final es una **logística con curvas suaves sobre el clima frente a lo normal** (AUC 0,762 a ciegas, frente a 0,659 de la regla y 0,710 del índice de calor). En dólares, el modelo ($31,7 de cada $100) y el índice de calor ($32,4) dirigen la plata casi igual.
+
+**Lo que NO debemos decir:**
+- **No** decir que el aprendizaje automático es mucho mejor que un índice simple: la ventaja es pequeña y en dólares desaparece.
+- **No** decir que los grados-día "mejoran el modelo" como resultado firme: frente a lo normal ayudan, pero es exploratorio.
+- **No** seguir diciendo "$34 de cada $100": esa cifra era del LightGBM anterior; ahora son unos $32.
+- **No** decir que las probabilidades "no sirven sin 15 años locales" sin el matiz: sin la calibración de 3 años, ya superan a la tasa media.
+
+**Frase para la presentación:** *"Probamos cinco modelos con un plan fijado antes de correr, entrenando en tres estados y midiendo a ciegas en siete. Ganó el más sencillo: curvas suaves sobre el calor y la falta de agua del verano, medidos frente a lo normal de cada condado. Ordena el riesgo mucho mejor que una regla de lluvia y algo mejor que un índice simple de calor; en dólares, los dos dirigen la plata casi igual. La lección para Colombia no es el algoritmo: es tener datos de cosecha y de pagos confiables."*

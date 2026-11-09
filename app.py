@@ -2,7 +2,7 @@
 app.py - Simulador del seguro paramétrico de sequía para el maíz de EE. UU. (diez estados, 1991-2025).
 
 Solo LEE tablas ya calculadas en datos/procesados (no entrena nada ni usa MLflow): eeuu_ciegas_app.csv, ciegas_impacto_*.csv,
-ciegas_semaforo_*.csv y cierre_* (scripts 34 a 44). Las tablas opcionales (cierre_*) pueden faltar sin que la app falle. Todas las rutas son relativas a este archivo.
+ciegas_semaforo_*.csv y cierre_* (scripts 34 a 44), y modelo_final_predicciones.csv (script 53: probabilidad del modelo final). Las tablas opcionales (cierre_*) pueden faltar sin que la app falle. Todas las rutas son relativas a este archivo.
 Uso, desde la carpeta del proyecto:
     streamlit run app.py
 """
@@ -65,6 +65,13 @@ def cargar_eeuu():
     for c in ["perdida", "pago_regla", "pago_umbral"]:
         d[c] = d[c].astype(bool)
     d["lluvia_pct_normal"] = -100 * d["puntaje_regla"]
+    # Modelo final (script 53): logística con splines sobre clima frente a lo normal, entrenada solo con años anteriores
+    # y con Iowa, Illinois e Indiana; reemplaza a la probabilidad y al tamaño de pérdida del LightGBM anterior
+    f = pd.read_csv(PROCESADOS / "modelo_final_predicciones.csv", dtype={"unidad": str})[["unidad", "anio", "prob", "ref_calor", "severidad_media_previa"]]
+    d = d.drop(columns=["prob", "prob_calibrada", "umbral_prob", "severidad_prevista"], errors="ignore").merge(f, on=["unidad", "anio"], how="inner")
+    frecuencia = d["pago_regla"].mean()
+    d["umbral_prob"] = d["prob"].quantile(1 - frecuencia)          # el modelo paga con la misma frecuencia que la regla
+    d["umbral_calor"] = d["ref_calor"].quantile(1 - frecuencia)
     return d.sort_values(["unidad", "anio"])
 
 
@@ -98,12 +105,13 @@ st.caption("El seguro paga automáticamente cuando el clima del verano anticipa 
 with tab_us_riesgo:
     us = cargar_eeuu()
     d = elegir_condado(us, "riesgo")
-    st.caption("Cada probabilidad sale de un modelo entrenado solo con años anteriores al que predice (1991 a 2025).")
+    st.caption("Modelo final: logística con curvas suaves sobre el clima del verano frente a lo normal. Cada probabilidad sale de un modelo "
+               "entrenado solo con años anteriores y solo con Iowa, Illinois e Indiana (en los otros siete estados es una predicción a ciegas).")
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
     a1.bar(d["anio"], d["lluvia_jun_ago_mm"], color=[NARANJA if p_ else AZUL for p_ in d["pago_regla"]], width=0.7, zorder=3)
     a1.set_ylabel("Lluvia de junio a agosto (mm)", color=TINTA_2)
     a1.legend(handles=[Patch(color=NARANJA, label="La regla de lluvia habría pagado"), Patch(color=AZUL, label="La regla no paga")], frameon=False, fontsize=8)
-    a2.bar(d["anio"], 100 * d["prob_calibrada"], color=[NARANJA if f else REJILLA for f in d["perdida"]], width=0.7, zorder=3)
+    a2.bar(d["anio"], 100 * d["prob"], color=[NARANJA if f else REJILLA for f in d["perdida"]], width=0.7, zorder=3)
     a2.set_ylabel("Probabilidad de pérdida (%)", color=TINTA_2)
     a2.legend(handles=[Patch(color=NARANJA, label="Año con pérdida real"), Patch(color=REJILLA, label="Año sin pérdida")], frameon=False, fontsize=8)
     ejes_limpios(a1, a2)
@@ -111,7 +119,8 @@ with tab_us_riesgo:
     st.pyplot(fig)
     st.caption("Pérdida: rendimiento de 80 % o menos de lo esperado por la tendencia de los años anteriores (NASS). Lluvia: CHIRPS.")
     with st.expander("Ver la tabla año por año"):
-        st.dataframe(d[["anio", "lluvia_jun_ago_mm", "lluvia_pct_normal", "prob_calibrada", "severidad_prevista", "perdida", "pago_regla"]], hide_index=True)
+        st.dataframe(d[["anio", "lluvia_jun_ago_mm", "lluvia_pct_normal", "prob", "perdida", "pago_regla"]], hide_index=True)
+    st.caption("La probabilidad no está calibrada: sirve sobre todo para ordenar el riesgo. En los estados nuevos, cuando dice 60 % la pérdida ocurrió cerca de 38 % de las veces.")
 
 # ---------------------------------------------------------------- Semáforo de condados
 with tab_us_semaforo:
@@ -183,7 +192,7 @@ with tab_us_seguro:
     valor_acre = (d["valor_esperado_usd"] / d["area_cosechada_acres"]).mean()
     c1, c2, c3 = st.columns(3)
     hay_topes = bool(d["factor_tope"].notna().any())
-    disparador = c1.selectbox("Disparador", ["Regla de lluvia", "Modelo", "Contrato Palmer"] + (["Contrato Palmer con topes"] if hay_topes else []), key="us_disp")
+    disparador = c1.selectbox("Disparador", ["Regla de lluvia", "Modelo", "Índice de calor", "Contrato Palmer"] + (["Contrato Palmer con topes"] if hay_topes else []), key="us_disp")
     sugerida = valor_acre * (0.75 if disparador == "Contrato Palmer con topes" else 1.0)
     suma_acre = c2.number_input("Suma asegurada por acre (US$)", min_value=50, max_value=2000, value=int(round(sugerida, -1)), step=10, key=f"us_suma_{disparador}")
     if disparador == "Contrato Palmer con topes":
@@ -198,6 +207,10 @@ with tab_us_seguro:
     elif disparador == "Modelo":
         umbral = c3.slider("Umbral de pago: probabilidad de pérdida", 0.05, 0.95, float(round(d["umbral_prob"].median(), 2)), 0.01, key="us_umbral_prob")
         paga = d["prob"] >= umbral
+    elif disparador == "Índice de calor":
+        c3.caption("Paga si la temperatura máxima de julio y agosto, frente a lo normal del condado, queda en el mismo porcentaje "
+                   "más caluroso de los años en que paga la regla de lluvia en los diez estados.")
+        paga = d["ref_calor"] >= d["umbral_calor"]
     elif c3.checkbox("Usar el umbral pactado (lluvia bajo el percentil 15 del condado)", value=True, key="us_pactado"):
         paga = d["pago_regla"]
     else:
@@ -215,7 +228,7 @@ with tab_us_seguro:
     elif disparador == "Contrato Palmer":
         d["pago_usd"] = suma_acre * d["area_cosechada_acres"] * d["fraccion_palmer"]          # pago proporcional
     else:
-        d["pago_usd"] = d["paga"] * suma_acre * d["area_cosechada_acres"] * d["severidad_prevista"]
+        d["pago_usd"] = d["paga"] * suma_acre * d["area_cosechada_acres"] * d["severidad_media_previa"]   # tamaño medio de las pérdidas de años anteriores
     prima_pura = d["pago_usd"].mean()
     prima = prima_pura * (1 + recargo)
     bien = d.loc[d["perdida"], "pago_usd"].sum()
@@ -239,8 +252,8 @@ with tab_us_seguro:
     ejes_limpios(ax)
     fig.tight_layout()
     st.pyplot(fig)
-    st.caption(f"El pago es la suma asegurada por el área cosechada y por la pérdida que estima el modelo. Precio nacional de cada campaña (USDA ERS), "
+    st.caption(f"Con regla, modelo o índice de calor, el pago es la suma asegurada por el área cosechada y por el tamaño medio de las pérdidas de los años anteriores. Precio nacional de cada campaña (USDA ERS), "
                f"en dólares de {resumen_us['anio_dolares']}. La RMA cubre todas las causas, también la caída del precio.")
     vista = d.assign(resultado=[("Pagó y hubo pérdida" if p_ and f else "Pagó sin pérdida" if p_ else "Hubo pérdida y no pagó" if f else "Sin pago ni pérdida")
                                 for p_, f in zip(d["paga"], d["perdida"])])
-    st.dataframe(vista[["anio", "lluvia_jun_ago_mm", "prob_calibrada", "pago_usd", "perdida_usd", "indemnizacion", "resultado"]], hide_index=True)
+    st.dataframe(vista[["anio", "lluvia_jun_ago_mm", "prob", "pago_usd", "perdida_usd", "indemnizacion", "resultado"]], hide_index=True)
