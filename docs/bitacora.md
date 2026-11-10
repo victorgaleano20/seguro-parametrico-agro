@@ -706,3 +706,94 @@ Detalle: `docs/resultados_cierre.md`. Scripts `40` a `46`. El plan se subió ant
 **Resultado de la octava parte (exploratorio; `scripts/52_grados_dia_anomalia.py`):** con grados-día frente a lo normal (conjunto C), la logística con splines saca, en los siete estados nuevos, AUC 0,764 en 1991-2025 (A: 0,762), **dentro del año 0,721 (A: 0,700)**, y en 2011-2025 AUC 0,881 (A: 0,856) y **dentro del año 0,800 (A: 0,747; índice de calor: 0,764)**. En el periodo de elección empata con A (0,697 frente a 0,694). Confirma lo que sugirió el EDA: medidos frente a lo normal, los grados-día sí se trasladan y mejoran sobre todo la distinción entre condados de un mismo año. **Como se fijó en el plan, no cambia el modelo final** (la idea salió de mirar los estados de prueba). Es la recomendación principal para un trabajo futuro, a probar con datos que no se hayan mirado (por ejemplo, otros estados o años nuevos).
 
 **Resultado de la décima parte (dólares con el modelo final; `scripts/53_dolares_modelo_final.py`):** todos los disparadores pagan en el mismo número de condado-años y con el tamaño medio de las pérdidas de años anteriores. De cada $100, a condados con pérdida: diez estados, modelo $31,7, índice de calor $32,4, regla $25,8, azar $8,4 (pérdida cubierta 60 %, 56 % y 49 %); sin 2012, $17,6, $15,9 y $12,7; siete estados a ciegas, $25,4, $27,4 y $20,0. **En dólares, el modelo y el índice de calor dirigen la plata casi igual**; los dos superan a la regla y al azar. La cifra anterior ("$34") venía del LightGBM y de su modelo de tamaño. Acierto del modelo final en los diez estados: 0,787 (calor 0,735; regla 0,670); dentro del año 0,698 (0,664; 0,616); Brier 0,076 frente a 0,087 de la tasa media. El simulador (`app.py`) ya usa este modelo y agrega el índice de calor como disparador.
+
+## 2026-11-09: nueva versión del simulador (plan, escrito antes de programar)
+
+**Pedido:** una app más dinámica, al nivel de especialistas en ciencia de datos, para el jurado y para que otros especialistas la exploren. Se abre en local (`streamlit run app.py`), no se publica.
+
+**Antes, una auditoría externa de la app y del proyecto (2026-11-09) dejó cuatro puntos que la app nueva debe respetar:**
+1. **Las cifras de 1991-2025 en los siete estados no son del todo a ciegas:** los años 1991-2010 de esos estados se usaron para escoger entre 10 modelos (sexta parte). La cifra más limpia es la de confirmación, 2011-2025.
+2. **Frente al índice de calor, el modelo empata:** en confirmación, la diferencia de AUC es +0,021 con rango de 95 % de −0,009 a +0,084 (en 12 % de los remuestreos el modelo no gana).
+3. En la app anterior, cada disparador pagaba con su propia frecuencia en el condado, y "de cada $100 de subsidio" se dividía por (1 + recargo).
+4. La etiqueta incluye pérdidas por exceso de agua (1993 es el año con más pérdidas en los siete estados).
+
+**Estructura (6 páginas, con dos niveles: arriba la lectura para el jurado, en desplegables el detalle para especialistas):** Resumen, Mapa del riesgo, Por qué predice, Contrato y riesgo de base, Laboratorio de desempeño y Ficha del modelo.
+
+**Alcance de esta sesión:** script `54_tablas_app.py` y las páginas Resumen, Contrato y Laboratorio. La app anterior queda como página "Simulador anterior" hasta que el mapa la reemplace.
+
+**Reglas:**
+- La app no entrena: lee `modelo_final_predicciones.csv` (script 53: modelo final, entrenado solo con Iowa, Illinois e Indiana y años anteriores, prediciendo los diez estados) y `final_resultados.csv` (script 50, para comparar los 10 modelos en los siete estados).
+- `54` precalcula, por grupo (diez, siete nuevos, tres originales) y periodo (1991-2025, sin 2012, 1991-2010 y 2011-2025), el AUC global y dentro del año del modelo, el índice de calor y la regla, con rangos de 95 % remuestreando años completos (1.000 remuestreos, semilla 2026), y la distribución de las diferencias del modelo frente al calor y a la regla, con los mismos años en cada remuestreo.
+- La frase del veredicto no se escribe a mano: dice "supera" solo si el rango de 95 % de la diferencia no incluye el cero; si lo incluye, dice que no se distinguen.
+- Contrato: todos los disparadores pagan en la misma cantidad de condado-años (la frecuencia que se elija, por omisión la de la regla en el grupo elegido), con monto = valor esperado × tamaño medio de las pérdidas de años anteriores, como `53`. La regla usa su umbral pactado (percentil 15) cuando la frecuencia es la suya; con otra frecuencia, ordena por lluvia frente a lo normal.
+- Pruebas: las cifras de la app deben coincidir con las de `50` y `53` (0,762, 0,710 y 0,659 en los siete estados; $31,7, $32,4 y $25,8 en los diez).
+
+**Resultado (2026-11-09):**
+- `scripts/54_tablas_app.py` (unos 2,5 minutos) deja `app_metricas.csv`, `app_diferencias.csv` y `app_auc_por_anio.csv`. Reproduce las cifras de `50` y `53` (siete estados, 1991-2025: 0,762, 0,710 y 0,659).
+- **Modelo frente al índice de calor, siete estados:** en 2011-2025 la diferencia de AUC es +0,021 (rango −0,009 a +0,086; no gana en 11 % de los remuestreos) y dentro del año −0,017 (−0,068 a +0,105): **no se distinguen**. En 1991-2025 el modelo sí supera al calor en AUC total (+0,009 a +0,106), pero ese periodo incluye los años usados para escoger. Frente a la regla de lluvia, el modelo la supera en todos los periodos.
+- **App nueva** (`app.py` con `st.navigation`; páginas en `paginas/`, funciones en `app_comun.py`, gráficas con Plotly): Resumen, Contrato y riesgo de base, Laboratorio de desempeño (curvas ROC y de precisión, año por año, calibración, modelo frente a calor, por estado y los diez modelos) y Simulador anterior.
+- **Contrato, diez estados, frecuencia de la regla (14,4 %):** coincide con `53` ($31,7, $32,4, $25,8 y $8,4). Dato nuevo: en el peor año (2012), el modelo pagaría 11 veces su prima pura anual, el índice de calor 13 veces y la regla 10 veces.
+- **Diferencia con `53` en los siete estados:** allí el modelo y el calor pagaban con la frecuencia de los diez estados (14,4 %) y la regla con la suya (15,3 %). La app usa la misma frecuencia para los tres: modelo $24,5, calor $26,5, regla $20,0 (en `53`: $25,4, $27,4 y $20,0). La conclusión no cambia.
+- **Minnesota:** el Brier del modelo (0,090) es peor que el de la tasa media (0,065); la app lo deja ver en Calibración filtrando ese estado.
+- En la versión anterior del simulador se corrigió "predicción a ciegas" y se quitó la división de "de cada $100" por (1 + recargo); se agregó un aviso de que no sirve para comparar disparadores.
+- Pruebas: `tests/test_app.py` (cifras frente a `50` y `53`, misma frecuencia de pago, veredicto y que cada página cargue sin errores); 23 pruebas pasan. Se revisaron capturas de cada página.
+- **Pendiente para la siguiente sesión:** páginas Mapa del riesgo, Por qué predice (efecto exacto de cada variable de la logística con splines y escenario "¿y si...?") y Ficha del modelo.
+- **Cambio pedido (2026-11-09):** se retiró la página "Simulador anterior" (sigue en git, commit `f07e46d`, como `app.py`) y los títulos de grupo de la barra lateral. La vista año por año de un condado vuelve con la página Mapa; el semáforo, que no pasó su prueba, no se repone.
+- **Matrices de confusión (2026-11-09):** nueva pestaña del Laboratorio con las tres matrices (modelo, calor, regla) pagando con la misma frecuencia, ajustable, más precisión, exhaustividad, F1, especificidad y Heidke. Siete estados, 1991-2025, frecuencia de la regla (15,3 %): el modelo paga en 49 % de las pérdidas (calor 46 %, regla 39 %); de sus pagos, 33 % caen en pérdida (calor 31 %, regla 26 %; azar 10 %).
+
+## 2026-11-09 (segunda parte): validación por estado y año (plan, escrito y congelado antes de correr)
+
+**Pregunta:** la prueba a ciegas entrenó solo con Iowa, Illinois e Indiana. ¿Cuánto rinde el mismo modelo cuando aprende de más estados? Tres preguntas concretas: (1) ¿entrenar con 3 estados subestimaba al modelo?; (2) ¿Minnesota falla por falta de estados parecidos en el entrenamiento?; (3) con más datos, ¿el modelo se separa del índice de calor?
+
+**Esquema (dejar un estado afuera, hacia adelante):** para cada estado s de los diez y cada año t de 1991 a 2025, el modelo se entrena con **los otros nueve estados y los años anteriores a t**, y predice el año t en el estado s. Ningún estado se usa para predecirse a sí mismo y nunca se usa el futuro.
+
+**Lo que no cambia (es el modelo final, no uno nuevo):** logística con splines, conjunto A (13 variables de clima frente a lo normal, sin ubicación ni grados-día), rejilla C en 0,01, 0,1 y 1 escogida por AUC en los 3 últimos años de entrenamiento (`50.ajustar`), **sin calibrar**. Etiqueta: la de `47.etiquetas` (pérdida = rendimiento de 80 % o menos de la tendencia del condado con años anteriores). Base: `eeuu_ciegas_base.csv`. Referencias: índice de calor de julio y agosto, regla de lluvia de junio a agosto (`47.regla`) y azar. No se prueban variantes.
+
+**Métricas:** AUC global, sin 2012 y dentro de cada año (años con 10 o más pérdidas, ponderado por pérdidas), para los diez estados, los siete nuevos, los tres originales y cada estado; periodos 1991-2025, 1991-2010 y 2011-2025. Rangos de 95 % con 1.000 remuestreos de años completos (semilla 2026), usando los mismos años para todo lo que se compara. Comparaciones pareadas: 9→1 frente a 3→7 (en los siete estados, con `final_predicciones.csv`, `splines_A`), 9→1 frente al índice de calor y 9→1 frente a la regla.
+
+**Lectura, fijada de antemano:**
+1. **Más estados ayudan** si, en los siete estados y 1991-2025, el rango de 95 % de la diferencia de AUC (9→1 menos 3→7) no incluye el cero. Si lo incluye: entrenar con 3 estados no subestimaba al modelo de forma demostrable.
+2. **El modelo supera al índice de calor** solo si el rango de 95 % de la diferencia no incluye el cero, en AUC total y dentro del año, en 2011-2025 y en 1991-2025. Si no, se mantiene "no se distinguen".
+3. **Minnesota:** si su AUC con 9→1 sigue bajo 0,60, la falta de estados parecidos no explica su falla.
+4. Los tres estados originales tienen aquí su primera medida fuera de su propio estado; se reportan, pero se recuerda que se miraron muchas veces.
+5. Ningún resultado cambia el modelo final ni se usa para escoger nada.
+
+Script: `scripts/55_validacion_por_estado.py`. Salidas: `datos/procesados/estado_predicciones.csv`, `estado_resultados.csv` y `estado_diferencias.csv`.
+
+**Resultado de la segunda parte (2026-11-09; `scripts/55_validacion_por_estado.py`, unos 7 minutos):** la etiqueta coincide con la de la prueba a ciegas en el 100 % de las filas de los siete estados.
+
+| Siete estados nuevos | 9 estados -> 1 | 3 -> 7 | Índice de calor | Regla |
+|---|---:|---:|---:|---:|
+| AUC 1991-2025 | 0,696 | 0,762 | 0,710 | 0,659 |
+| AUC 1991-2010 | 0,613 | 0,709 | 0,657 | 0,601 |
+| AUC 2011-2025 | 0,858 | 0,856 | 0,835 | 0,786 |
+| Dentro del año 1991-2025 | 0,679 | 0,700 | 0,679 | 0,650 |
+
+**Lectura según el plan:**
+1. **Más estados no ayudan:** en los siete estados, 1991-2025, 9->1 menos 3->7 = −0,065 (rango −0,151 a −0,007); dentro del año −0,021 (−0,041 a −0,001). El rango excluye el cero, pero **del lado negativo**. Matiz (después de ver los datos, no cambia la lectura): la diferencia está en 1991-2010 (−0,097), que es justo el periodo en que se escogió el tipo de modelo mirando el esquema 3->7, así que esa ventaja de 3->7 puede estar inflada por la elección. En 2011-2025, el periodo limpio, son iguales (+0,002; −0,021 a +0,026). Hipótesis sin probar: los estados nuevos son más heterogéneos (riego, norte frío) y diluyen la relación calor-pérdida que se aprende en el núcleo del Cinturón del Maíz.
+2. **El modelo no supera al índice de calor:** diez estados, 1991-2025, −0,012 (−0,061 a +0,041); 2011-2025, +0,020 (−0,009 a +0,108); dentro del año, rangos que incluyen el cero. Se mantiene "no se distinguen".
+3. **Minnesota:** 0,396 con 9->1 (bajo 0,60, y bajo el azar). La falta de estados parecidos no explica su falla. El índice de calor da 0,349: **en Minnesota, más calor va con menos pérdida**, al revés que en el resto, coherente con que allí pesan el frío y el exceso de humedad (cierre: sequía 26 % de lo pagado, exceso de humedad 41 %).
+4. **Tres estados originales, primera medida fuera de su propio estado:** Illinois 0,913, Indiana 0,840, **Iowa 0,566** (índice de calor 0,607). Iowa, el mayor productor, se predice mal sin sus propios datos.
+5. **Por estado (1991-2025, 9->1):** funciona en Illinois, Indiana, Ohio (0,850), Kansas (0,779), South Dakota (0,755) y Missouri (0,738); es débil en Nebraska (0,650), Wisconsin (0,607) e Iowa (0,566), y falla en Minnesota (0,396).
+6. No cambia el modelo final.
+
+**Diagnóstico (2026-11-09, después de ver los resultados; pedido: "¿el modelo está sobreentrenado o copia al índice de calor?"; no cambia nada):**
+- **Sobreentrenamiento, moderado:** AUC del modelo final en sus propios datos de entrenamiento (diez estados, 1981-2025) 0,899, frente a 0,787 fuera de muestra. Tiene 78 coeficientes con regularización (C = 0,1) para 33.411 filas, pero la muestra efectiva son unos pocos años malos, así que parte de la brecha es aprender las particularidades de esos años. Todas las cifras del proyecto son fuera de muestra, así que la brecha no infla ninguna comparación.
+- **No copia al índice de calor:** correlación de orden 0,66 en total y 0,57 dentro de cada año. Pagando con la frecuencia de la regla, coinciden en 2.493 de 3.659 pagos (68 %).
+- **Cuando no coinciden, el modelo acierta más:** condado-años que solo paga el modelo, 22,4 % con pérdida; que solo paga el calor, 13,1 %; que pagan los dos, 41,2 %; que no paga ninguno, 4,8 %. El modelo sí agrega algo (lluvia y Palmer), pero en pocos casos (1.166 condado-años), y en AUC esa ganancia queda dentro del ruido de unos pocos años malos.
+
+## 2026-11-09 (tercera parte): puesta al día después de la auditoría (plan, escrito antes de correr)
+
+**No se toca el modelo final ni los planes congelados.**
+1. **`53`:** en cada subconjunto (siete estados, tres estados, sin 2012) los tres disparadores pagarán con la frecuencia de la regla **en ese subconjunto**, no con la de los diez estados. Se vuelve a correr `53` (las predicciones no cambian; cambian los dólares de los subconjuntos).
+2. **Chequeo pendiente de la prueba a ciegas:** lo normal se calcula con 1981-1994 y se predice desde 1991. Se agrega a `54` el periodo 1995-2025 y se reporta el modelo frente al calor y a la regla en ese periodo. Lectura fijada: si el AUC del modelo en 1995-2025 queda dentro del rango de 95 % de 1991-2025, la superposición no cambia las conclusiones.
+3. **Documentos:** corregir "algo mejor que el índice de calor" y "estados que nunca vio" en `historia_del_proyecto.md`, `resumen_final.md` y `README.md`; tendencia y calibración en `metodologia.md`; la sección de la app del README; el CLAUDE.md.
+4. **Código:** ayuda de `48_predecir.py` y comentario de `28_base_eeuu.py`.
+5. **Cuaderno final:** `46` agrega una sección con la validación por estado (`55`), el veredicto frente al índice de calor con rangos (`54`) y el diagnóstico de sobreentrenamiento; se regenera el HTML.
+6. Pruebas, commit y `empaquetar_contexto.py`.
+
+**Resultado de la tercera parte:**
+- **`53` corregido:** las predicciones son idénticas a las anteriores (diferencia máxima 0). Diez estados, 1991-2025, sin cambio ($31,7, $32,4, $25,8, $8,4). Cambian los subconjuntos (antes → ahora, modelo / calor / regla): diez sin 2012 $17,6/$15,9/$12,7 → **$18,8/$17,5/$12,7**; siete estados $25,4/$27,4/$20,0 → **$24,5/$26,5/$20,0**; siete sin 2012 → $19,1/$20,3/$13,2; tres estados $35,4/$33,5/$32,1 → $37,9/$35,8/$32,1.
+- **Chequeo 1995-2025 (siete estados):** modelo 0,829 (0,78-0,86), calor 0,809, regla 0,762; dentro del año 0,742, 0,742 y 0,697. El AUC del modelo queda dentro del rango de 1991-2025 (0,65-0,85): **la superposición con lo normal no cambia las conclusiones** (lectura fijada). Matiz: en 1995-2025 la diferencia total con el calor es +0,020 con rango de +0,0005 a +0,047 (en diez estados, +0,004 a +0,070), es decir, apenas excluye el cero; dentro del año no se distinguen (−0,039 a +0,059). Como 1995-2010 incluye años usados para escoger el modelo, y en el periodo limpio (2011-2025) el rango sí incluye el cero, la lectura que se sostiene es: **ventaja pequeña en el acierto total, no demostrada en el periodo limpio, y ninguna dentro de cada año.**
+- **Documentos y código (tercera parte):** corregidos `historia_del_proyecto.md` (nueva sección 9 con la frase vigente para la presentación), `resumen_final.md`, `README.md` (tabla de resultados y sección de la app), `metodologia.md` (tendencia con 8 años en la evaluación; modelo final sin calibrar; "lo que no afirmamos"), `CLAUDE.md`, la ayuda de `48_predecir.py` (probado con `eeuu_ciegas_base.csv`) y el comentario de `28_base_eeuu.py`.
+- **Cuaderno final:** nueva sección 13 (segunda auditoría: modelo frente a calor con rangos, validación por estado y sobreentrenamiento); el cuaderno pasa a 15 secciones. Se ejecutó sin errores y se regeneró `docs/proyecto_final.html`. Al armar la tabla se vio que en 1991-2025 la diferencia con el calor también excluye el cero (+0,009 a +0,106); se dice en el texto, con el matiz de que ese periodo incluye los años usados para escoger.

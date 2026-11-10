@@ -152,4 +152,20 @@ Este documento resume por qué se tomó cada decisión del seguro de sequía par
 - **No** seguir diciendo "$34 de cada $100": esa cifra era del LightGBM anterior; ahora son unos $32.
 - **No** decir que las probabilidades "no sirven sin 15 años locales" sin el matiz: sin la calibración de 3 años, ya superan a la tasa media.
 
-**Frase para la presentación:** *"Probamos cinco modelos con un plan fijado antes de correr, entrenando en tres estados y midiendo a ciegas en siete. Ganó el más sencillo: curvas suaves sobre el calor y la falta de agua del verano, medidos frente a lo normal de cada condado. Ordena el riesgo mucho mejor que una regla de lluvia y algo mejor que un índice simple de calor; en dólares, los dos dirigen la plata casi igual. La lección para Colombia no es el algoritmo: es tener datos de cosecha y de pagos confiables."*
+## 9. Auditoría externa, app nueva y validación por estado (9 de noviembre de 2026)
+
+**Por qué:** una auditoría externa revisó cifras y afirmaciones contra las tablas. Detalle en `docs/bitacora.md` (2026-11-09, tres partes).
+
+**Qué cambió en lo que se puede decir:**
+- **"A ciegas" tiene un matiz:** los siete estados no se usaron para entrenar, pero sus años 1991-2010 sí se usaron para **escoger** el modelo. La medida limpia es 2011-2025.
+- **Frente al índice de calor, el modelo no se distingue:** en 2011-2025, +0,021 de AUC con rango de 95 % de −0,009 a +0,086, y dentro de cada año −0,017. En 1991-2025 (+0,009 a +0,106) y sin los años de lo normal (1995-2025: +0,0005 a +0,047) la ventaja total excluye el cero, pero esos periodos incluyen los años usados para escoger el modelo. Lo que se sostiene: **ventaja pequeña en saber qué años son malos, ninguna en qué condados**.
+- **Entrenar con 9 estados no mejora al modelo** (validación dejando un estado afuera, `55`): en 2011-2025 da lo mismo que entrenar con 3 (0,858 frente a 0,856), y sigue empatado con el índice de calor.
+- **El método no es universal:** fuera de su estado funciona en Illinois (0,91), Indiana, Ohio, Kansas, South Dakota y Missouri; es débil en Nebraska, Wisconsin e Iowa (0,57), y falla en Minnesota (0,40), donde más calor va con **menos** pérdida (allí pesan el frío y el exceso de humedad).
+- **No copia al índice de calor:** coinciden en 68 % de los pagos; donde no coinciden, lo que paga solo el modelo tiene 22 % de pérdidas y lo que paga solo el calor, 13 %. Esa ganancia es real pero pequeña frente al ruido de pocos años malos.
+
+**Lo que NO debemos decir:**
+- **No** decir que el modelo es "mejor" que el índice de calor, ni siquiera "algo mejor": no se distingue en el periodo limpio.
+- **No** decir "estados que nunca vio" sin el matiz de que se usaron para escoger el modelo.
+- **No** decir que un índice de calor sirve en cualquier zona: depende de la causa de la pérdida.
+
+**Frase para la presentación:** *"Probamos cinco modelos con un plan fijado antes de correr, entrenando en tres estados y midiendo en siete que no se usaron para entrenar. Ganó el más sencillo: curvas suaves sobre el calor y la falta de agua del verano, medidos frente a lo normal de cada condado. Ordena el riesgo mucho mejor que una regla de lluvia, pero un índice simple de calor de julio y agosto hace prácticamente lo mismo, y con cualquiera de los dos unos $2 de cada $3 irían a condados sin pérdida. Además, el índice funciona donde la pérdida viene del calor y falla donde viene del frío o del exceso de agua. La lección para Colombia no es el algoritmo: es tener datos de cosecha y de pagos confiables, y diseñar el índice según la causa de pérdida de cada zona."*

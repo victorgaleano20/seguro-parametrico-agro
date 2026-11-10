@@ -9,30 +9,32 @@ Un seguro por índice paga solo, mirando un dato público (lluvia, calor), sin v
 Se entregan:
 - un análisis exploratorio de los datos (`notebooks/eda.ipynb`);
 - una comparación de cinco modelos de aprendizaje automático y la elección del modelo final, que estima la probabilidad de pérdida de cosecha por condado (`modelos/modelo_final.joblib`);
-- una prueba a ciegas en siete estados que el modelo nunca vio;
+- una prueba en siete estados que el modelo no usó para entrenar (sus años 1991-2010 sí se usaron para escoger el modelo), y una validación dejando un estado afuera;
 - un semáforo de condados (que no se sostuvo);
 - el impacto en dólares con datos reales (NASS, RMA, ERS y BLS);
-- un simulador en Streamlit.
+- una app en Streamlit para el jurado y para especialistas (`streamlit run app.py`).
 
 **Empieza aquí:** el resumen de una página está en `docs/resumen_final.md`, y el proyecto contado de principio a fin en `notebooks/proyecto_final.ipynb` (versión sin código: `docs/proyecto_final.html`).
 
 ## Resultados principales
 
-**Modelo final:** logística con curvas suaves (splines) sobre el clima del verano medido frente a lo normal de cada condado (lluvia, meses secos, déficit, temperatura máxima e índice de Palmer), sin ubicación. Ganó una comparación de cinco modelos con criterio fijado antes de correr, entrenando solo con Iowa, Illinois e Indiana y probando a ciegas en siete estados.
+**Modelo final:** logística con curvas suaves (splines) sobre el clima del verano medido frente a lo normal de cada condado (lluvia, meses secos, déficit, temperatura máxima e índice de Palmer), sin ubicación. Ganó una comparación de cinco modelos con criterio fijado antes de correr, entrenando solo con Iowa, Illinois e Indiana y probando en siete estados que no se usaron para entrenar.
 
-| Pregunta | Resultado (siete estados a ciegas, 1991-2025, salvo que se diga otra cosa) |
+| Pregunta | Resultado (siete estados nuevos, 1991-2025, salvo que se diga otra cosa) |
 |---|---|
-| ¿Predice en estados que nunca vio? | **Sí:** acierto al ordenar (AUC) 0,762 (rango 95 %: 0,64-0,85), sin 2012 0,738; azar 0,50 |
+| ¿Predice en estados que no usó para entrenar? | **Sí:** acierto al ordenar (AUC) 0,762 (rango 95 %: 0,64-0,85), sin 2012 0,738; en 2011-2025, el periodo que no se usó para escoger, 0,856 (0,73-0,89); azar 0,50 |
 | ¿Mejor que una regla de lluvia? | **Sí, con claridad:** la regla saca 0,659; dentro de cada año, 0,700 frente a 0,650 |
-| ¿Mejor que un índice simple de calor de julio y agosto? | **Poco:** el índice saca 0,710; en 2011-2025 la ventaja es 0,021 (se pedía más de 0,02) y dentro de cada año el índice queda por encima |
+| ¿Mejor que un índice simple de calor de julio y agosto? | **No se distinguen:** en 2011-2025, +0,021 de AUC con rango de 95 % de −0,009 a +0,086; dentro de cada año, −0,017. La validación dejando un estado afuera lo confirma |
 | ¿Cuál de los 5 modelos? | El más simple de los que aprenden (splines) generalizó mejor que bosque, boosting, LightGBM y boosting monótono |
 | ¿Sus probabilidades sirven? | Sin calibrar, sí (Brier 0,086 frente a 0,092 de la tasa media), aunque exageran en el riesgo más alto. La calibración con 3 años las empeoraba |
 | ¿A dónde va la plata? (diez estados) | De cada $100 que pagaría el índice, llegan a condados con pérdida: modelo $31,7, índice de calor $32,4, regla $25,8, azar $8,4. **En dólares, el modelo no supera al índice de calor** |
 | ¿Grados-día de calor (> 29 °C)? | En valor absoluto no se trasladan a estados nuevos; frente a lo normal mejoran el acierto dentro del año (0,721), pero es exploratorio |
+| ¿Más estados de entrenamiento ayudan? | **No:** entrenando con 9 estados, en 2011-2025, 0,858 frente a 0,856 con 3 |
+| ¿Funciona en todos los estados? | **No:** fuera de su estado, bien en Illinois (0,91), Indiana, Ohio, Kansas, South Dakota y Missouri; débil en Nebraska, Wisconsin e Iowa (0,57); falla en Minnesota (0,40), donde la pérdida viene del frío y del exceso de agua |
 | ¿Algún semáforo se sostiene? | **No** (el margen de error incluye el cero) |
 | ¿Contrato Palmer con topes vendible? | **No:** paga más de 1,5 veces la pérdida real en 18 a 23 de 35 años |
 
-**En una frase:** con buenos datos, un modelo sencillo de clima ordena el riesgo de pérdida mejor que una regla de lluvia en estados que nunca vio, pero apenas mejor que un índice simple de calor y con un riesgo de base grande (unos $2 de cada $3 irían a condados sin pérdida).
+**En una frase:** con buenos datos, un modelo sencillo de clima ordena el riesgo de pérdida mejor que una regla de lluvia en estados que no usó para entrenar, pero un índice simple de calor hace prácticamente lo mismo, ninguno de los dos sirve donde la pérdida viene del frío o del exceso de agua, y el riesgo de base es grande (unos $2 de cada $3 irían a condados sin pérdida).
 
 ## Documentos
 
@@ -62,7 +64,7 @@ Se entregan:
 | `scripts/` | Scripts de Python numerados, que se corren en orden. `comun.py` tiene las funciones que comparten. La numeración tiene saltos porque se conserva la del proyecto original. |
 | `docs/` | Documentos y figuras (`docs/figuras/`). |
 | `tests/` | Pruebas de las funciones clave (`python -m pytest tests`). |
-| `app.py` | Simulador en Streamlit: riesgo por condado, semáforo y simulación del seguro. |
+| `app.py`, `app_comun.py`, `paginas/` | App en Streamlit (varias páginas, Plotly): Resumen, Contrato y riesgo de base y Laboratorio de desempeño. Lee las tablas de `50`, `53` y `54`. |
 | `CLAUDE.md` | Resumen corto para el asistente de cada integrante: estado, qué leer y reglas de trabajo. |
 
 ## Para el equipo: cómo empezar
@@ -96,7 +98,7 @@ Estos pasos funcionan en cualquier computador con Windows, Mac o Linux.
      export NASS_API_KEY="tu_clave"
      ```
 5. **Descargar los datos** (solo si vas a recalcular; las tablas procesadas pequeñas y las figuras ya vienen en el repositorio): scripts `01`, `27` y `33`. Si una descarga se corta, vuelve a correr el script: no repite lo que ya bajó.
-6. **Abrir el simulador:** `streamlit run app.py`.
+6. **Abrir la app:** `streamlit run app.py`.
 7. **Antes de trabajar**, lee `docs/historia_del_proyecto.md`, `docs/metodologia.md` y `docs/bitacora.md`. Las reglas de trabajo están en `CLAUDE.md`.
 
 ## Cómo correr
@@ -136,7 +138,9 @@ python scripts/47_cinco_modelos.py      # 5 modelos en los tres estados original
 python scripts/49_temperatura_diaria.py # temperatura diaria por condado (NOAA nClimGrid-Daily) y grados-día
 python scripts/50_comparacion_final.py  # 5 modelos x 2 conjuntos, a ciegas en siete estados; guarda el modelo final (unos 50 minutos)
 python scripts/52_grados_dia_anomalia.py # exploratorio: grados-día frente a lo normal
-python scripts/53_dolares_modelo_final.py # predicciones del modelo final para el simulador y dólares
+python scripts/53_dolares_modelo_final.py # predicciones del modelo final y dólares
+python scripts/54_tablas_app.py         # tablas de la app: AUC con rangos de 95 % y diferencias pareadas
+python scripts/55_validacion_por_estado.py # validación dejando un estado afuera (unos 7 minutos)
 python scripts/48_predecir.py archivo.csv # predecir con el modelo final
 python scripts/51_construir_eda.py      # arma notebooks/eda.ipynb (luego nbconvert, como el cuaderno final)
 
@@ -146,7 +150,7 @@ python -m nbconvert --to notebook --execute --inplace notebooks/proyecto_final.i
 python -m nbconvert --to html --no-input --output-dir docs --output proyecto_final notebooks/proyecto_final.ipynb
 
 python -m pytest tests                  # pruebas de las funciones clave
-streamlit run app.py                    # simulador
+streamlit run app.py                    # app
 mlflow ui --backend-store-uri sqlite:///mlflow.db   # corridas y versiones del modelo
 python scripts/empaquetar_contexto.py   # al final de cada sesión: zip liviano para el chat asesor
 ```
@@ -155,17 +159,14 @@ python scripts/empaquetar_contexto.py   # al final de cada sesión: zip liviano 
 
 Nota para Windows: la librería C de NetCDF falla con rutas que tienen tildes. Por eso los scripts leen los NetCDF con `engine="scipy"`.
 
-## Publicar el simulador en Streamlit Community Cloud
+## La app
 
-La app solo lee archivos ya calculados en `datos/procesados/` (menos del límite de 100 MB), no entrena nada y no usa MLflow al abrir. Si falta una tabla opcional, esa parte lo avisa y las demás siguen. Para publicarla (se hace desde la web):
+Se abre en local: `streamlit run app.py`. Solo lee tablas ya calculadas en `datos/procesados/` (scripts `50`, `53`, `54`); no entrena nada ni usa MLflow. Tiene tres páginas:
+- **Resumen:** AUC del modelo, el índice de calor y la regla, con rangos de 95 %, y el veredicto calculado (dice "supera" solo si el rango de la diferencia excluye el cero).
+- **Contrato y riesgo de base:** los tres disparadores pagan en el mismo número de condado-años; de cada $100, pérdida cubierta, errores y peor año.
+- **Laboratorio de desempeño:** curvas ROC y de precisión, matrices de confusión, AUC año por año, calibración, modelo frente a calor, por estado y los diez modelos.
 
-1. Entra a [share.streamlit.io](https://share.streamlit.io) e inicia sesión con GitHub. Autoriza a Streamlit a ver tus repositorios cuando lo pida.
-2. Haz clic en **Create app** y elige desplegar desde un repositorio de GitHub.
-3. Repositorio: `victorgaleano20/seguro-parametrico-agro`; rama: `main`; archivo principal: `app.py`.
-4. En **Advanced settings**, elige **Python 3.12**. No hacen falta secretos: la app no usa ninguna clave.
-5. **Dependencias:** Streamlit instala `requirements.txt`, que incluye todo el proyecto (MLflow, SHAP, Jupyter, GeoPandas...) y puede tardar o fallar. La app solo necesita lo de `requirements-app.txt` (pandas, numpy, matplotlib y streamlit). Si la instalación falla, crea una rama `publicacion` en la que `requirements.txt` tenga el contenido de `requirements-app.txt`, y usa esa rama en el paso 3.
-6. Haz clic en **Deploy**.
-7. Comparte el enlace que te da Streamlit.
+Necesita lo de `requirements-app.txt` (pandas, numpy, scikit-learn, plotly y streamlit). Si se quisiera publicar en Streamlit Community Cloud, el archivo principal es `app.py` y no hace falta ninguna clave.
 
 ## Fuentes de datos (`datos/crudos/`)
 

@@ -84,11 +84,12 @@ def main():
     d.to_csv(PROCESADOS / "modelo_final_predicciones.csv", index=False)
 
     filas, metricas = [], []
-    frecuencia = d["pago_regla"].mean()
     grupos = {"diez estados": d, "siete estados nuevos (a ciegas)": d[d["nuevo"]], "tres estados originales": d[~d["nuevo"]]}
     for gnombre, g in grupos.items():
         for periodo, gg in [("1991-2025", g), ("1991-2025 sin 2012", g[g["anio"] != 2012])]:
-            for f in dolares(gg, frecuencia):
+            # Corrección del 2026-11-09 (bitácora, tercera parte): la frecuencia es la de la regla EN ESTE subconjunto,
+            # para que los tres disparadores paguen en el mismo número de condado-años (antes se usaba la de los diez estados)
+            for f in dolares(gg, gg["pago_regla"].mean()):
                 filas.append({"grupo": gnombre, "periodo": periodo, **f})
         for col, etiqueta in [("prob", "Modelo final"), ("ref_calor", "Índice de calor jul-ago"), ("ref_regla", "Regla de lluvia jun-ago")]:
             dentro, n = e47.auc_dentro(g, col)

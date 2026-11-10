@@ -1,6 +1,6 @@
 """
 46_construir_cuaderno.py
-Parte B del cierre: arma notebooks/proyecto_final.ipynb, el proyecto contado de principio a fin en 14 secciones.
+Parte B del cierre: arma notebooks/proyecto_final.ipynb, el proyecto contado de principio a fin en 15 secciones.
 El cuaderno SOLO lee las tablas de datos/procesados y las figuras de docs/figuras: no entrena ni recalcula ningún modelo, y
 todas las cifras del texto salen de las tablas (así el texto no puede contradecirlas).
 
@@ -32,7 +32,7 @@ def codigo(texto):
 md("""
 # Seguro de sequía para el maíz de Estados Unidos: el proyecto de principio a fin
 
-Este cuaderno cuenta todo el proyecto en 14 pasos, en lenguaje sencillo. Está pensado para alguien que no sabe de seguros ni de datos.
+Este cuaderno cuenta todo el proyecto en 15 pasos, en lenguaje sencillo. Está pensado para alguien que no sabe de seguros ni de datos.
 No entrena ningún modelo: solo lee las tablas y las figuras que ya se calcularon, para que el texto y las cifras no se contradigan.
 Cada parte termina con una frase de **qué significa**.
 """)
@@ -318,13 +318,13 @@ if ruta_c.exists():
 md("""
 **Lo que dicen los resultados:**
 - **El modelo más simple de los que aprenden fue el mejor:** curvas suaves sobre el clima frente a lo normal, sin ubicación. Supera al LightGBM original de la primera prueba a ciegas (0,739, que usaba la ubicación) y es el mejor o casi el mejor en todos los estados; en Wisconsin ahora le gana a la regla. Minnesota sigue débil.
-- **La ventaja sobre un índice simple de calor es real pero pequeña:** en confirmación pasa el umbral fijado por muy poco, y **dentro de cada año, en 2011-2025, el índice de calor queda por encima**. Los árboles (bosque, boosting) y los grados-día absolutos no ayudaron en el periodo de elección, aunque en 2011-2025 salieron algo mejor: el orden entre modelos depende del periodo y los rangos de confianza se superponen.
+- **La ventaja sobre un índice simple de calor es pequeña y no está demostrada** (sección 13): en confirmación pasa el umbral fijado por muy poco, pero su rango de 95 % incluye el cero, y **dentro de cada año, en 2011-2025, el índice de calor queda por encima**. Los árboles (bosque, boosting) y los grados-día absolutos no ayudaron en el periodo de elección, aunque en 2011-2025 salieron algo mejor: el orden entre modelos depende del periodo y los rangos de confianza se superponen.
 - **Lo más prometedor quedó como exploratorio:** con grados-día medidos frente a lo normal de cada condado, el acierto dentro de cada año sube de 0,700 a 0,721 (y en 2011-2025, de 0,747 a 0,800, por encima del índice de calor). No cambia el modelo final porque la idea salió de mirar los estados de prueba; es lo primero que habría que confirmar con datos nuevos.
 - **Probabilidades:** la calibración con los tres años más recientes las **empeoraba** (Brier 0,0935 frente a 0,0864 sin calibrar; tasa media 0,0919), porque esos años a veces casi no tienen pérdidas. El modelo final se usa sin calibrar: así es mejor que la tasa media incluso en estados que nunca vio, aunque exagera en el décimo de más riesgo (dice 60 %, ocurrió 38 %).
 
 **El modelo final** se reentrenó con los diez estados (1981-2025) y está en `modelos/modelo_final.joblib`; se usa con `python scripts/48_predecir.py archivo.csv`.
 
-**Qué significa:** un modelo sencillo de curvas suaves sobre el clima del verano es la mejor opción entre las probadas para ordenar el riesgo en estados nuevos. Su ventaja sobre un índice simple de calor es pequeña: para un contrato, el índice simple sigue siendo una alternativa casi igual de buena y mucho más fácil de explicar.
+**Qué significa:** un modelo sencillo de curvas suaves sobre el clima del verano es la mejor opción entre las probadas para ordenar el riesgo en estados nuevos. Frente a un índice simple de calor no se distingue (sección 13): para un contrato, el índice simple es igual de bueno y mucho más fácil de explicar.
 """)
 
 # ------------------------------------------------------------------------------------------------ 8. cierre
@@ -536,9 +536,64 @@ El modelo sí distingue condados dentro de un mismo año mejor que la regla de l
 **Qué significa:** el método está bien hecho y es honesto, pero el resultado se debe contar como lo que es: un índice de clima que ordena el riesgo mejor que una regla de lluvia, con mucho riesgo de base y sin poder ponerle precio todavía en una zona nueva.
 """)
 
+# ------------------------------------------------------------------------------------------------ 13. segunda auditoría
+md("""
+## 13. La segunda auditoría (2026-11-09): el índice de calor, la validación por estado y el sobreentrenamiento
+
+Una auditoría externa revisó las cifras contra las tablas. Dejó tres preguntas, que se respondieron con planes escritos antes de correr (`docs/bitacora.md`, 2026-11-09).
+
+**1. ¿El modelo es mejor que el índice simple de calor?** Se midió con rangos de 95 % remuestreando años completos, usando los mismos años para los dos (`scripts/54_tablas_app.py`). Los años 1991-2010 de los siete estados se usaron para escoger el modelo, así que **la medida limpia es 2011-2025**.
+""")
+codigo('''
+met = leer("app_metricas.csv")
+dif = leer("app_diferencias.csv")
+periodos = {"todo": "1991-2025", "confirmacion": "2011-2025 (limpio)", "desde_1995": "1995-2025 (sin los años de lo normal)"}
+filas = []
+for p, nombre in periodos.items():
+    m = met[(met["grupo"] == "siete") & (met["periodo"] == p)].set_index("puntaje")
+    v = dif[(dif["grupo"] == "siete") & (dif["periodo"] == p) & (dif["comparador"] == "ref_calor")]
+    lo, hi = np.percentile(v["dif_auc"], [2.5, 97.5])
+    lo_d, hi_d = np.percentile(v["dif_dentro"], [2.5, 97.5])
+    filas.append({"Periodo": nombre, "Modelo": c(m.loc["prob", "auc"], 3), "Índice de calor": c(m.loc["ref_calor", "auc"], 3),
+                  "Regla": c(m.loc["ref_regla", "auc"], 3),
+                  "Diferencia modelo - calor (rango 95 %)": f"{c(m.loc['prob', 'auc'] - m.loc['ref_calor', 'auc'], 3)} ({c(lo, 3)} a {c(hi, 3)})",
+                  "Dentro del año (rango 95 %)": f"{c(m.loc['prob', 'auc_dentro'] - m.loc['ref_calor', 'auc_dentro'], 3)} ({c(lo_d, 3)} a {c(hi_d, 3)})"})
+md("**Siete estados nuevos, acierto al ordenar:**")
+mostrar(pd.DataFrame(filas))
+''')
+md("""
+En el periodo limpio, el rango de la diferencia incluye el cero, y dentro de cada año también. En 1991-2025 y en 1995-2025 la ventaja total sí excluye el cero (en 1995-2025, apenas), pero esos periodos incluyen los años 1991-2010, que se usaron para escoger el modelo entre diez opciones: esa ventaja puede deberse en parte a la propia elección. Dentro de cada año no se distinguen en ningún periodo. **Lo que se sostiene: el modelo y el índice de calor no se distinguen.**
+
+**2. ¿Entrenar con más estados mejora al modelo?** Validación dejando un estado afuera (`scripts/55_validacion_por_estado.py`): para cada estado y año, el mismo modelo se entrena con los otros nueve estados y los años anteriores.
+""")
+codigo('''
+r = leer("estado_resultados.csv")
+t = r[(r["grupo"] == "siete")].pivot_table(index="periodo", columns="puntaje", values="auc").loc[["todo", "seleccion", "confirmacion"]]
+t.index = ["1991-2025", "1991-2010", "2011-2025 (limpio)"]
+t = t[["prob_91", "prob_37", "ref_calor", "ref_regla"]].rename(columns={"prob_91": "9 estados -> 1", "prob_37": "3 -> 7", "ref_calor": "Índice de calor", "ref_regla": "Regla"})
+md("**Siete estados nuevos, acierto al ordenar:**")
+mostrar(t.map(lambda x: c(x, 3)).reset_index(names="Periodo"))
+e = r[(r["periodo"] == "todo") & r["grupo"].str.startswith("estado")].pivot_table(index="grupo", columns="puntaje", values="auc")
+e.index = e.index.str.replace("estado: ", "")
+e = e.sort_values("prob_91", ascending=False)[["prob_91", "ref_calor", "ref_regla"]].rename(columns={"prob_91": "Modelo (9 -> 1)", "ref_calor": "Índice de calor", "ref_regla": "Regla"})
+md("**Cada estado, prediciéndolo con los otros nueve (1991-2025):**")
+mostrar(e.map(lambda x: c(x, 3)).reset_index(names="Estado"))
+''')
+md("""
+- **Más estados no mejoran al modelo:** en 2011-2025 da lo mismo entrenar con 9 que con 3. En 1991-2010 da menos, pero ese es el periodo en que se escogió el modelo con el esquema de 3 estados, así que la ventaja de 3 -> 7 ahí puede estar inflada por la elección.
+- **Sigue empatado con el índice de calor.**
+- **El método no es universal:** funciona en Illinois, Indiana, Ohio, Kansas, South Dakota y Missouri; es débil en Nebraska, Wisconsin e Iowa, y falla en Minnesota, donde el índice de calor también queda bajo el azar: **allí más calor va con menos pérdida**, porque pesan el frío y el exceso de humedad (sección 9).
+
+**3. ¿El modelo está sobreentrenado o copia al índice de calor?**
+- **Sobreentrenamiento moderado:** en sus propios datos de entrenamiento el modelo final da 0,899; fuera de muestra, 0,787. Con 78 coeficientes regularizados para 33.411 filas no es un modelo grande, pero la muestra efectiva son pocos años malos. Todas las cifras del proyecto son fuera de muestra, así que esto no infla ninguna comparación.
+- **No copia al índice:** pagando la misma cantidad de veces coinciden en 68 % de los pagos. Donde no coinciden, lo que paga solo el modelo tiene 22 % de pérdidas y lo que paga solo el calor, 13 %. El modelo agrega algo de la lluvia y el Palmer, pero en pocos casos, y esa ganancia queda dentro del ruido.
+
+**Qué significa:** el calor de julio y agosto es casi toda la señal. Un índice simple de calor ordena el riesgo igual que el modelo, y los dos funcionan donde la pérdida viene del calor y fallan donde viene del frío o del exceso de agua. Para un contrato, el índice simple basta; para otra región, hay que diseñarlo según la causa de pérdida de esa zona.
+""")
+
 # ------------------------------------------------------------------------------------------------ 12. Colombia
 md("""
-## 13. Lo que esto significa para Colombia: requisitos de datos y 3 recomendaciones
+## 14. Lo que esto significa para Colombia: requisitos de datos y 3 recomendaciones
 
 | Lo que se necesita | EE. UU. (maíz, 10 estados) | Colombia (maíz y café, EVA) |
 |---|---|---|
@@ -559,23 +614,24 @@ md("""
 
 # ------------------------------------------------------------------------------------------------ 13. límites
 md("""
-## 14. Las limitaciones y lo que no se puede decir
+## 15. Las limitaciones y lo que no se puede decir
 
 **Se puede decir:**
 - Un modelo entrenado en tres estados distingue años y condados con pérdida en otros siete mejor que una regla de lluvia, también sin 2012 y sin los condados con mucho riego. Dentro de un mismo año, la ventaja es modesta.
 - Las probabilidades del modelo final, sin calibrar, son mejores que la tasa media incluso en estados nuevos, pero exageran en el riesgo más alto; para poner precio conviene ajustarlas con datos locales.
-- Un modelo sencillo de curvas suaves sobre el clima frente a lo normal, entrenado en tres estados, ordena el riesgo en otros siete mejor que una regla de lluvia (0,762 frente a 0,659) y algo mejor que un índice simple de calor (0,710).
+- Un modelo sencillo de curvas suaves sobre el clima frente a lo normal, entrenado en tres estados, ordena el riesgo en otros siete mejor que una regla de lluvia (0,762 frente a 0,659); un índice simple de calor (0,710) hace prácticamente lo mismo: en 2011-2025 no se distinguen.
 - De cada $100 que pagaría el índice, unos $32 llegan a condados con pérdida, frente a unos $8 pagando al azar; el índice de calor logra casi lo mismo.
 - Un contrato simple con el índice de Palmer se comporta como la regla de lluvia.
 
 **No se puede decir:**
 - Que el semáforo funcione: ninguno de los dos cumplió el criterio.
-- Que el modelo funcione en cualquier estado: en Minnesota no distingue mejor que el azar y en Wisconsin pierde contra la regla.
+- Que el modelo funcione en cualquier estado: falla en Minnesota (0,40 entrenando con los otros nueve), donde la pérdida viene del frío y del exceso de agua, y es débil en Iowa, Nebraska y Wisconsin.
 - Que el contrato con el índice de Palmer, con topes, sea vendible tal cual.
 - Que las causas por estado expliquen por qué falla el modelo en Minnesota: es una coincidencia que los datos muestran, no una causa demostrada.
 - Que el índice dirija la plata igual o mejor que el seguro real: no se midieron con la misma vara.
 - Que el índice reemplace al seguro real: cubre más riesgos y paga por finca.
-- Que el aprendizaje automático sea mucho mejor que un índice simple de calor: la ventaja es pequeña y, en dólares, desaparece.
+- Que el modelo sea mejor que un índice simple de calor: en el periodo limpio y dentro de cada año no se distinguen, y en dólares queda igual o por debajo.
+- Que los siete estados sean una prueba del todo a ciegas para el modelo final: sus años 1991-2010 se usaron para escogerlo.
 - Que el modelo funcione en Colombia: allá no hay datos para comprobarlo.
 
 **Limitaciones que siguen abiertas:**

@@ -26,11 +26,11 @@ Las dos se **evalúan** contra lo que pasó de verdad: ¿en los condados y años
 | **Temperatura y Palmer** | Temperatura máxima mensual e índice de sequía de Palmer de NOAA (nClimDiv) por condado. | `28_base_eeuu.py` y `34_base_ciegas.py` |
 | **Rendimiento** | Producción / área cosechada de NASS, pasado a t/ha. | `08_base_eeuu.py` y `34_base_ciegas.py` |
 | **Filtro de calidad** | Se excluyen (1) **rendimientos repetidos**: iguales, a 3 decimales, a los del año anterior, porque pueden ser un dato copiado, y (2) **condados con salto de área**: cambio de nivel de 5 veces o más entre la mediana del área cosechada antes y después de un año de corte, con al menos 3 años de cada lado. | `comun.py`: `salto_de_nivel()`; `08_base_eeuu.py` y `34_base_ciegas.py` |
-| **Tendencia** | Recta (regresión lineal) del rendimiento contra el año, por condado, con 10 o más años válidos. Representa el rendimiento **esperado** de cada año, porque la tecnología sube los rendimientos con el tiempo. En la evaluación año por año se ajusta solo con años anteriores. | `comun.py`: `tendencia()` y `tendencia_ciclos()` |
+| **Tendencia** | Recta (regresión lineal) del rendimiento contra el año, por condado. En la evaluación año por año (la que usan todos los resultados del modelo) se ajusta con los años anteriores y al menos 8 años válidos; en las bases (`28`, `34`) se usan al menos 10. Representa el rendimiento **esperado** de cada año, porque la tecnología sube los rendimientos con el tiempo. En la evaluación año por año se ajusta solo con años anteriores. | `comun.py`: `tendencia()` y `tendencia_ciclos()` |
 | **Pérdida** | Un condado-año **es pérdida** si el rendimiento es de **80 % o menos del esperado** por la tendencia. Ejemplo: si se esperaban 10 t/ha y salieron 7,8 t/ha (78 %), es pérdida. | `comun.py`: `UMBRAL_PERDIDA = 0.8` |
 | **Regla de lluvia** | Paga si la lluvia de junio a agosto queda bajo el percentil 15 de los años anteriores del condado. | `29_modelos_eeuu.py` y `35_prueba_ciegas.py` |
 | **Modelos** | Primero: regresión logística, bosque aleatorio y LightGBM (se eligió LightGBM). Después: cinco modelos con y sin grados-día, probados a ciegas; ganó la logística con splines (sección 8). | `29_modelos_eeuu.py`, `47_cinco_modelos.py` y `50_comparacion_final.py` |
-| **Calibración** | Regresión isotónica con los 3 años anteriores al que se predice, para que "30 %" signifique cerca de 3 de cada 10. | `29_modelos_eeuu.py` |
+| **Calibración** | El primer modelo (LightGBM) se calibraba con regresión isotónica en los 3 años anteriores al que se predice. **El modelo final va sin calibrar**: esa calibración empeoraba las probabilidades cuando los 3 años tenían pocas pérdidas (Brier 0,0935 frente a 0,0864 sin calibrar). | `29_modelos_eeuu.py`; `50_comparacion_final.py` |
 | **Pago del modelo** | Paga en los condado-años con mayor probabilidad, tantos como paga la regla. | `comun.py`: `pagar_igual_que_regla()` |
 | **Contrato Palmer** | Paga si el Palmer de julio y agosto queda bajo el percentil 15 de los años anteriores del condado: 0 % en el percentil 15 y 100 % en el percentil 2, en línea recta. | `37_palmer_ciegas.py` y `42_palmer_topes.py` |
 | **Pérdida y pagos en dólares** | Valor esperado de la cosecha = rendimiento esperado × área cosechada × precio nacional de la campaña (ERS), en dólares de 2025 (BLS). Lo que pagó el seguro real sale de la RMA. | `31_impacto_eeuu.py` y `38_impacto_ciegas.py`; `comun.py`: `leer_rma()` |
@@ -221,12 +221,13 @@ Detalle: `docs/bitacora.md` (partes cuarta a décima) y la sección 8 del cuader
 ## 9. Lo que NO afirmamos
 
 - **No** decimos que el semáforo funcione: ninguno de los dos cumplió el criterio.
-- **No** decimos que el modelo sirva en cualquier estado: en Minnesota no distingue mejor que el azar y en Wisconsin pierde contra la regla.
-- **No** decimos que sus probabilidades estén calibradas en un estado nuevo sin unos 15 años de datos locales.
+- **No** decimos que el modelo sirva en cualquier estado: en Minnesota falla (0,56 entrenando con 3 estados; 0,40 con 9), porque allí la pérdida viene sobre todo del frío y del exceso de agua; Iowa, fuera de su propio estado, da 0,57.
+- **No** decimos que sus probabilidades sean exactas: sin calibrar superan a la tasa media (Brier 0,086 frente a 0,092), pero en el décimo de más riesgo dicen 60 % y ocurrió 38 %, y en Minnesota son peores que la tasa media.
 - **No** decimos que el contrato Palmer con topes sea vendible tal cual.
 - **No** decimos que el índice reemplace al seguro real: este cubre más riesgos (precio, exceso de lluvia) y paga por finca. El costo de operar el índice es un supuesto.
 - **No** decimos que el modelo "predice la cosecha": se evalúa con el clima de todo el verano, a fines de septiembre.
 - **No** decimos que el índice dirija la plata igual o mejor que el seguro real: no se midieron con la misma vara.
-- **No** decimos que el aprendizaje automático sea mucho mejor que un índice simple de calor: la ventaja es pequeña y, en dólares, desaparece.
+- **No** decimos que el modelo sea mejor que un índice simple de calor: en 2011-2025 no se distinguen (+0,021; rango de 95 % de −0,009 a +0,086), dentro de cada año tampoco, y en dólares el índice queda igual o por encima.
+- **No** decimos que los siete estados sean una prueba del todo a ciegas para el modelo final: no se usaron para entrenar, pero sus años 1991-2010 sí para escogerlo. La medida limpia es 2011-2025.
 
 **Pruebas automáticas:** `tests/` comprueba que las funciones clave hacen lo que dicen, por ejemplo que el Heidke dé 0,375 en el ejemplo de la sección 4.2.

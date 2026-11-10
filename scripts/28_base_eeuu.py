@@ -31,7 +31,8 @@ PROCESADOS = RAIZ / "datos" / "procesados"
 
 ESTADOS_NOAA = {"11": "17", "12": "18", "13": "19"}     # código de estado de NOAA -> FIPS (Illinois, Indiana, Iowa)
 NOAA_FALTANTE = -99.0                                   # NOAA marca los faltantes con -99,99
-NORMAL_INI, NORMAL_FIN = 1981, 1994                     # lo normal: antes del primer año que se predice
+NORMAL_INI, NORMAL_FIN = 1981, 1994                     # lo normal. OJO: se cruza con los primeros años que se predicen
+                                                       # (1991-1994); sin ellos (1995-2025) las conclusiones no cambian (bitácora, 2026-11-09)
 MESES_LLUVIA = {5: "may", 6: "jun", 7: "jul", 8: "ago", 9: "sep"}
 MESES_VERANO = {6: "jun", 7: "jul", 8: "ago"}
 SECO_PCT = 75                                           # mes seco: lluvia < 75 % de lo normal

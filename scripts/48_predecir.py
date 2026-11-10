@@ -1,14 +1,15 @@
 """
 48_predecir.py
-Predice la probabilidad de pérdida de maíz con el modelo final que deja 47_cinco_modelos.py (modelos/modelo_final.joblib).
+Predice la probabilidad de pérdida de maíz con el modelo final que deja 50_comparacion_final.py (modelos/modelo_final.joblib):
+logística con splines sobre el clima frente a lo normal, sin calibrar (úsese sobre todo para ordenar el riesgo).
 
 Entrada: un CSV con una fila por condado y año y las columnas de modelos/modelo_final.json ("variables"):
-  latitud, longitud, lluvia_may ... lluvia_sep (% de lo normal), racha_meses_secos, deficit_jul_ago,
-  tmax_jun ... tmax_ago (diferencia en °C frente a lo normal), palmer_jun ... palmer_ago y grupo (FIPS del estado: 17, 18 o 19).
-  Son las mismas columnas de datos/procesados/eeuu_sequia_base.csv (script 28).
+  lluvia_may ... lluvia_sep (% de lo normal), racha_meses_secos, deficit_jul_ago, tmax_jun ... tmax_ago (diferencia en °C
+  frente a lo normal) y palmer_jun ... palmer_ago. No usa ubicación ni estado.
+  Son columnas de datos/procesados/eeuu_ciegas_base.csv (script 34).
 Salida: el mismo CSV con prob_perdida (y prob_perdida_calibrada si el modelo trae calibrador), en <archivo>_predicciones.csv.
 
-Uso:  python scripts/48_predecir.py datos/procesados/eeuu_sequia_base.csv
+Uso:  python scripts/48_predecir.py datos/procesados/eeuu_ciegas_base.csv
 """
 import json
 import sys

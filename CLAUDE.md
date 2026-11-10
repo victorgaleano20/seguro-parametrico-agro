@@ -21,10 +21,13 @@
 - **Calibración:** la isotónica de 3 años empeoraba (Brier 0,0935 frente a 0,0864 sin calibrar; tasa 0,0919). Por eso el modelo final va sin calibrar; exagera en el décimo de más riesgo (60 % frente a 38 %).
 - **Dólares (`53`, mismos pagos para todos los disparadores):** de cada $100, diez estados: modelo $31,7, calor $32,4, regla $25,8, azar $8,4. **En dólares el modelo no supera al índice de calor.** La cifra "$34" es del LightGBM anterior: no usarla.
 - **Exploratorio (`52`, no cambia el modelo):** grados-día frente a lo normal suben el AUC dentro del año a 0,721 (2011-2025: 0,800). Es la recomendación principal para seguir, con datos no mirados.
-- **Simulador:** usa el modelo final y agrega el índice de calor como disparador.
+- **Lectura vigente frente al índice de calor (2026-11-09):** **no se distinguen** en el periodo limpio (2011-2025: +0,021, rango −0,009 a +0,086; dentro del año −0,017). En 1991-2025 (+0,009 a +0,106) y 1995-2025 (+0,0005 a +0,047) la ventaja total excluye el cero, pero esos periodos incluyen los años usados para escoger. Los siete estados no son del todo a ciegas: sus años 1991-2010 se usaron para escoger el modelo.
+- **Dólares por subconjunto corregidos (2026-11-09, `53`):** siete estados $24,5 / $26,5 / $20,0 (modelo / calor / regla); diez sin 2012 $18,8 / $17,5 / $12,7. Diez estados sin cambio.
+- **Validación por estado y año (2026-11-09; `55`; bitácora, segunda parte):** entrenar con 9 estados no mejora al modelo (siete estados, 1991-2025: 0,696 frente a 0,762 de 3->7; en 2011-2025 iguales, 0,858 y 0,856); sigue empatado con el índice de calor (diez estados: −0,012, rango −0,061 a +0,041). Fuera de su estado: Minnesota 0,396 (más calor, menos pérdida), Iowa 0,566, Illinois 0,913.
+- **App nueva (2026-11-09; bitácora, misma fecha):** `app.py` + `paginas/` + `app_comun.py`; tablas de `54_tablas_app.py`. Páginas: Resumen, Contrato y riesgo de base, Laboratorio (el simulador anterior se retiró; sigue en git, commit `f07e46d`). Faltan Mapa, Por qué predice y Ficha del modelo. **Frente al índice de calor, en 2011-2025, el modelo no se distingue** (+0,021; rango −0,009 a +0,086).
 
 ## Estado final anterior (2026-11-05)
-**Seguro de sequía para el maíz de EE. UU.** (diez estados, 1991-2025). Entregables finales: `notebooks/proyecto_final.ipynb` (versión sin código: `docs/proyecto_final.html`), `docs/resumen_final.md` (una página), `docs/resultados_cierre.md`, `docs/resultados_prueba_ciegas.md` y el simulador `app.py` (listo para Streamlit Community Cloud; pasos en el README).
+**Seguro de sequía para el maíz de EE. UU.** (diez estados, 1991-2025). Entregables finales: `notebooks/proyecto_final.ipynb` (versión sin código: `docs/proyecto_final.html`), `docs/resumen_final.md` (una página), `docs/resultados_cierre.md`, `docs/resultados_prueba_ciegas.md` y la app `app.py` (local, tres páginas).
 
 **Relato vigente (desde el 2026-11-08):** EE. UU. es el laboratorio donde se mide el método; Colombia es donde hace falta. En Colombia el dato de cosecha no permite medir la pérdida (23,5 % de maíz repetido) y no hay pagos públicos de seguros; en EE. UU. sí, pero allá ya existe un seguro que paga por el rendimiento del condado (seguro por rendimiento del área de la RMA), así que el índice de clima no es un producto nuevo para EE. UU. Requisitos y 3 recomendaciones para Colombia: `docs/requisitos_datos.md`.
 
@@ -66,7 +69,7 @@
 - Entorno con Python 3.12 y `pip install -r requirements.txt`, mejor fuera de carpetas sincronizadas como OneDrive y en una ruta corta. Los pasos están en el README.
 - **Flujo:** `01` (descargas; requiere `NASS_API_KEY`), `08` (base de NASS), `27` a `32` (tres estados originales; `29` tarda unos 60 minutos), `33` a `39` (prueba a ciegas; `35` tarda unos 35 minutos), `40` a `45` (cierre) y `46` (cuaderno final; luego nbconvert, ver README).
 - Funciones compartidas: `scripts/comun.py`. Pruebas: `python -m pytest tests`.
-- Simulador: `streamlit run app.py`. MLflow: `mlflow ui --backend-store-uri sqlite:///mlflow.db`.
+- App: `streamlit run app.py`. Tablas de la app: `54`; validación por estado: `55`. MLflow: `mlflow ui --backend-store-uri sqlite:///mlflow.db`.
 - Al cerrar cada sesión: `python scripts/empaquetar_contexto.py` (zip liviano para el chat asesor).
 - **En Windows:** la librería C de NetCDF falla con rutas con tildes, por eso los NetCDF se leen con `engine="scipy"`.
 
@@ -91,6 +94,6 @@ El proyecto está terminado. Lo que sigue abierto son **limitaciones**, no tarea
 - **Contrato Palmer:** rediseñar el pago (no solo ponerle tope) antes de pensar en venderlo.
 - **Veranos muy lluviosos (1993):** el modelo de sequía no los ve; solo se midió sequía.
 - **Minnesota:** la causa de que el modelo falle allí sigue sin probarse.
-- **Presentación final (10 + 5 minutos):** la frase vigente está en `docs/historia_del_proyecto.md`, sección 7.
+- **Presentación final (10 + 5 minutos):** la frase vigente está en `docs/historia_del_proyecto.md`, sección 9.
 - **Mejoras posibles del modelo (no hechas):** horas de calor por encima de 29 °C, vegetación o humedad del suelo desde satélite, un modelo simple y monótono, y comparar contra un contrato por rendimiento del condado.
 - **Área cosechada:** en sequías fuertes, los lotes abandonados pueden esconder parte de la pérdida; no se verificó.
