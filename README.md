@@ -64,7 +64,7 @@ Se entregan:
 | `scripts/` | Scripts de Python numerados, que se corren en orden. `comun.py` tiene las funciones que comparten. La numeración tiene saltos porque se conserva la del proyecto original. |
 | `docs/` | Documentos y figuras (`docs/figuras/`). |
 | `tests/` | Pruebas de las funciones clave (`python -m pytest tests`). |
-| `app.py`, `app_comun.py`, `paginas/` | App en Streamlit (varias páginas, Plotly): Resumen, Contrato y riesgo de base y Laboratorio de desempeño. Lee las tablas de `50`, `53` y `54`. |
+| `app.py`, `app_comun.py`, `paginas/` | App en Streamlit (varias páginas, Plotly): Resumen, Contrato y riesgo de base, Laboratorio de desempeño y Predicción (condado, año y póliza; escenario o proyección). Lee las tablas de `50`, `53` y `54`. |
 | `CLAUDE.md` | Resumen corto para el asistente de cada integrante: estado, qué leer y reglas de trabajo. |
 
 ## Para el equipo: cómo empezar
@@ -161,10 +161,11 @@ Nota para Windows: la librería C de NetCDF falla con rutas que tienen tildes. P
 
 ## La app
 
-Se abre en local: `streamlit run app.py`. Solo lee tablas ya calculadas en `datos/procesados/` (scripts `50`, `53`, `54`); no entrena nada ni usa MLflow. Tiene tres páginas:
+Se abre en local: `streamlit run app.py`. Solo lee tablas ya calculadas en `datos/procesados/` (scripts `50`, `53`, `54`); no entrena nada ni usa MLflow. Tiene cuatro páginas:
 - **Resumen:** AUC del modelo, el índice de calor y la regla, con rangos de 95 %, y el veredicto calculado (dice "supera" solo si el rango de la diferencia excluye el cero).
 - **Contrato y riesgo de base:** los tres disparadores pagan en el mismo número de condado-años; de cada $100, pérdida cubierta, errores y peor año.
 - **Laboratorio de desempeño:** curvas ROC y de precisión, matrices de confusión, AUC año por año, calibración, modelo frente a calor, por estado y los diez modelos.
+- **Predicción:** para un estado, condado y año (o un año futuro), y el disparador y la póliza que se escojan, estima si el seguro se activa, la probabilidad de pérdida, el riesgo de base, la prima y el resultado de la aseguradora, con sensibilidad al umbral y al clima. Usa el modelo final guardado y la tabla de `56`; el modelo no usa estado ni año, solo las 13 variables de clima.
 
 Necesita lo de `requirements-app.txt` (pandas, numpy, scikit-learn, plotly y streamlit). Si se quisiera publicar en Streamlit Community Cloud, el archivo principal es `app.py` y no hace falta ninguna clave.
 

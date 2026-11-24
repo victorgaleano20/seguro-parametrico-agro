@@ -14,5 +14,6 @@ paginas = st.navigation([
     st.Page("paginas/resumen.py", title="Resumen", icon=":material/insights:", default=True),
     st.Page("paginas/contrato.py", title="Contrato y riesgo de base", icon=":material/payments:"),
     st.Page("paginas/laboratorio.py", title="Laboratorio de desempeño", icon=":material/science:"),
+    st.Page("paginas/prediccion.py", title="Predicción", icon=":material/online_prediction:"),
 ])
 paginas.run()
